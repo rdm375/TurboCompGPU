@@ -114,3 +114,33 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_reference_shift_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_impeller_test
+        tests/impeller.cpp
+    )
+
+    target_link_libraries(turbocompgpu_impeller_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_aerodynamics
+        COMMAND turbocompgpu_impeller_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_prewhirl_test
+        tests/impeller_prewhirl.cpp
+    )
+
+    target_link_libraries(turbocompgpu_prewhirl_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_prewhirl
+        COMMAND turbocompgpu_prewhirl_test
+    )
+endif()
