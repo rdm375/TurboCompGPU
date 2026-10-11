@@ -1,0 +1,30 @@
+# Build directories
+build/
+build-*/
+cmake-build-*/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# Compilers
+*.o
+*.a
+*.so
+*.so.*
+*.dll
+*.exe
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Editors
+.vscode/
+.idea/
+*~
+
+# Generated results
+results/
