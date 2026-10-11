@@ -144,3 +144,18 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_prewhirl_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_continuity_test
+        tests/continuity.cpp
+    )
+
+    target_link_libraries(turbocompgpu_continuity_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_continuity
+        COMMAND turbocompgpu_continuity_test
+    )
+endif()
