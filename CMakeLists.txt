@@ -190,3 +190,20 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_station_reference_shift_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_conservation_test
+        tests/conservation.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_conservation_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_conservation
+        COMMAND turbocompgpu_conservation_test
+    )
+endif()
