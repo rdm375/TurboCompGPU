@@ -309,3 +309,54 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_five_residual_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_nonlinear_residual_test
+        tests/nonlinear_residual.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_nonlinear_residual_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME nonlinear_residual
+        COMMAND turbocompgpu_nonlinear_residual_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_nonlinear_solver_test
+        tests/nonlinear_solver.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_nonlinear_solver_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME nonlinear_solver
+        COMMAND turbocompgpu_nonlinear_solver_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_nonlinear_solver_extended_test
+        tests/nonlinear_solver_extended.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_nonlinear_solver_extended_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME nonlinear_solver_extended
+        COMMAND turbocompgpu_nonlinear_solver_extended_test
+    )
+endif()
