@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <optional>
 #include <stdexcept>
@@ -158,12 +159,10 @@ inline bool solve_2x2(
 
 } // namespace nonlinear_detail
 
-inline NonlinearSolverResult solve_nonlinear_compressor(
-    const thermomodel::Model& model,
-    const ImpellerSystemGeometry& geometry,
-    const NonlinearOperatingPoint& operating,
+inline NonlinearSolverResult solve_nonlinear_compressor_with_evaluator(
+    const std::function<NonlinearResidualResult(
+        const NonlinearUnknowns&)>& evaluator,
     const NonlinearUnknowns& initial_guess,
-    const NonlinearResidualScales& scales,
     const NonlinearSolverOptions& options = {})
 {
     using nonlinear_detail::Vector;
@@ -197,15 +196,10 @@ inline NonlinearSolverResult solve_nonlinear_compressor(
         }
 
         try {
-            auto r = evaluate_nonlinear_residual(
-                model,
-                geometry,
-                operating,
-                {
-                    point[0] * options.temperature_scale,
-                    point[1]
-                },
-                scales);
+            auto r = evaluator({
+                point[0] * options.temperature_scale,
+                point[1]
+            });
 
             if (!std::isfinite(r.residual_norm)) {
                 return std::nullopt;
@@ -418,6 +412,30 @@ inline NonlinearSolverResult solve_nonlinear_compressor(
 
     record_current();
     return result;
+}
+
+inline NonlinearSolverResult solve_nonlinear_compressor(
+    const thermomodel::Model& model,
+    const ImpellerSystemGeometry& geometry,
+    const NonlinearOperatingPoint& operating,
+    const NonlinearUnknowns& initial_guess,
+    const NonlinearResidualScales& scales,
+    const NonlinearSolverOptions& options = {})
+{
+    const auto evaluator =
+        [&](const NonlinearUnknowns& unknowns) {
+            return evaluate_nonlinear_residual(
+                model,
+                geometry,
+                operating,
+                unknowns,
+                scales);
+        };
+
+    return solve_nonlinear_compressor_with_evaluator(
+        evaluator,
+        initial_guess,
+        options);
 }
 
 } // namespace turbocompgpu

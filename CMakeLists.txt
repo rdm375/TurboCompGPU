@@ -360,3 +360,37 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_nonlinear_solver_extended_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_nonlinear_evaluation_profile_test
+        tests/nonlinear_evaluation_profile.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_nonlinear_evaluation_profile_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME nonlinear_evaluation_profile
+        COMMAND turbocompgpu_nonlinear_evaluation_profile_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_fast_nonlinear_solver_test
+        tests/fast_nonlinear_solver.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_fast_nonlinear_solver_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME fast_nonlinear_solver
+        COMMAND turbocompgpu_fast_nonlinear_solver_test
+    )
+endif()
