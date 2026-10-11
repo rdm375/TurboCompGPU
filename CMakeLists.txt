@@ -12,14 +12,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(CTest)
 
-option(TURBOCOMPGPU_ENABLE_OPENMP
-    "Enable OpenMP execution"
-    OFF
+find_package(ThermoGPU 2.0 REQUIRED CONFIG)
+
+add_executable(turbocompgpu_thermo_smoke
+    examples/thermo_smoke.cpp
 )
 
-option(TURBOCOMPGPU_ENABLE_CUDA
-    "Enable CUDA execution"
-    OFF
+target_link_libraries(turbocompgpu_thermo_smoke
+    PRIVATE thermogpu::thermo
 )
 
-# ThermoGPU integration will be introduced in M1.
+if(BUILD_TESTING)
+    add_test(
+        NAME thermogpu_integration
+        COMMAND turbocompgpu_thermo_smoke
+    )
+endif()
