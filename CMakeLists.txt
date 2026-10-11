@@ -258,3 +258,54 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_impeller_manufactured_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_loss_ideal_gas_test
+        tests/loss_ideal_gas.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_loss_ideal_gas_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME loss_ideal_gas
+        COMMAND turbocompgpu_loss_ideal_gas_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_impeller_system_loss_test
+        tests/impeller_system_loss.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_impeller_system_loss_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_system_loss
+        COMMAND turbocompgpu_impeller_system_loss_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_five_residual_test
+        tests/impeller_system_five_residual.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_five_residual_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_five_residual
+        COMMAND turbocompgpu_five_residual_test
+    )
+endif()
