@@ -207,3 +207,20 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_conservation_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_continuity_independent_test
+        tests/continuity_independent.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_continuity_independent_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_continuity_independent
+        COMMAND turbocompgpu_continuity_independent_test
+    )
+endif()

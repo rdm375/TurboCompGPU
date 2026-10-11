@@ -26,6 +26,13 @@ struct ContinuityOperatingPoint {
     double exit_density;       // kg/m^3
 };
 
+struct IndependentFlowOperatingPoint {
+    double inlet_mass_flow;   // kg/s
+    double outlet_mass_flow;  // kg/s
+    double inlet_density;     // kg/m^3
+    double exit_density;      // kg/m^3
+};
+
 struct ContinuityResult {
     double inlet_geometric_area;  // m^2
     double inlet_effective_area;  // m^2
@@ -167,6 +174,61 @@ inline ContinuityResult evaluate_continuity(
 
 // Adapter: use continuity-derived velocities in the
 // previously validated aerodynamic model.
+// Evaluate independent inlet and outlet trial mass flows.
+//
+// This overload deliberately does not enforce mass conservation.
+// The resulting mass-flow difference remains available to the
+// conservation-residual evaluator.
+
+inline ContinuityResult evaluate_continuity_independent(
+    const InletAnnulus& inlet,
+    const ImpellerExitPassage& exit,
+    const IndependentFlowOperatingPoint& operating_point)
+{
+    const double A1g = inlet_annulus_area(inlet);
+    const double A2g = impeller_exit_area(exit);
+
+    const double A1 =
+        effective_flow_area(A1g, inlet.blockage);
+
+    const double A2 =
+        effective_flow_area(A2g, exit.blockage);
+
+    const double Vm1 =
+        meridional_velocity(
+            operating_point.inlet_mass_flow,
+            operating_point.inlet_density,
+            A1);
+
+    const double Vm2 =
+        meridional_velocity(
+            operating_point.outlet_mass_flow,
+            operating_point.exit_density,
+            A2);
+
+    const double m1 =
+        (operating_point.inlet_density * A1) * Vm1;
+
+    const double m2 =
+        (operating_point.exit_density * A2) * Vm2;
+
+    if (!std::isfinite(m1) || !std::isfinite(m2)) {
+        throw std::runtime_error(
+            "Non-finite reconstructed mass flow");
+    }
+
+    return {
+        A1g,
+        A1,
+        A2g,
+        A2,
+        Vm1,
+        Vm2,
+        m1,
+        m2
+    };
+}
+
 inline ImpellerResult evaluate_impeller_from_continuity(
     const ImpellerGeometry& geometry,
     const ImpellerOperatingPoint& operating_point,
