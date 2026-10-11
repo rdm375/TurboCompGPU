@@ -159,3 +159,34 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_continuity_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_station_test
+        tests/station.cpp
+    )
+
+    target_link_libraries(turbocompgpu_station_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME station_thermodynamics
+        COMMAND turbocompgpu_station_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_station_reference_shift_test
+        tests/station_reference_shift.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_station_reference_shift_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME station_reference_shift
+        COMMAND turbocompgpu_station_reference_shift_test
+    )
+endif()
