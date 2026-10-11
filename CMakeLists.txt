@@ -224,3 +224,37 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_continuity_independent_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_impeller_system_test
+        tests/impeller_system.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_impeller_system_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_system
+        COMMAND turbocompgpu_impeller_system_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_impeller_manufactured_test
+        tests/impeller_system_manufactured.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_impeller_manufactured_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME impeller_manufactured
+        COMMAND turbocompgpu_impeller_manufactured_test
+    )
+endif()
