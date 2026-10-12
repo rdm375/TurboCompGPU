@@ -815,3 +815,39 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_choking_independent_validation_test
     )
 endif()
+
+# M1.6b.4 Stage 4: Rotating-frame throat.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_rotating_throat_test
+        tests/rotating_throat.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_rotating_throat_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME rotating_throat
+        COMMAND turbocompgpu_rotating_throat_test
+    )
+endif()
+
+# M1.6b.4 Stage 5: Inlet-coupled rotating-throat choking.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_inlet_coupled_choking_test
+        tests/inlet_coupled_choking.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_inlet_coupled_choking_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME inlet_coupled_choking
+        COMMAND turbocompgpu_inlet_coupled_choking_test
+    )
+endif()
