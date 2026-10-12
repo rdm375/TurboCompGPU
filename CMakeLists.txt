@@ -1370,3 +1370,31 @@ target_link_libraries(
     turbocompgpu_complete_stage_width_sensitivity
     PRIVATE turbocompgpu
 )
+
+
+# Stage 8B.5d: fixed-width and fixed-area radius sensitivity.
+add_executable(
+    turbocompgpu_complete_stage_radius_sensitivity
+    benchmarks/complete_stage_radius_sensitivity.cpp
+)
+target_link_libraries(
+    turbocompgpu_complete_stage_radius_sensitivity
+    PRIVATE turbocompgpu
+)
+
+
+# Stage 8B.5d: independent analytical recovery-boundary validation.
+add_executable(
+    turbocompgpu_complete_stage_recovery_geometry
+    tests/complete_stage_recovery_geometry.cpp
+)
+target_link_libraries(
+    turbocompgpu_complete_stage_recovery_geometry
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME complete_stage_recovery_geometry
+    COMMAND turbocompgpu_complete_stage_recovery_geometry
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/results-complete-stage-characteristic/radius-sensitivity.csv
+)
