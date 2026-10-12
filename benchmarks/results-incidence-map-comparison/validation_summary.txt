@@ -1,0 +1,41 @@
+M1.6b.2 Stage 4: Paired incidence compressor maps
+====================================================
+105 matched operating points: PASS
+315 nonlinear solutions: PASS (benchmark acceptance)
+105 zero-coefficient regressions: PASS (benchmark acceptance)
+M1.6b.1 baseline agreement: PASS
+Incidence entropy decomposition: PASS
+Design-point zero incidence: PASS
+Power identities: PASS
+Corrected-coordinate invariance: PASS
+
+AirLikeIdeal
+------------
+incidence_specific_loss: min=0, max=490.9476486, mean=122.7216705
+incidence_entropy_generation: min=0, max=1.634764865, mean=0.4075519103
+delta_static_pressure_ratio: min=-0.00878626218, max=0, mean=-0.001901089544
+delta_total_pressure_ratio: min=-0.01279325664, max=0, mean=-0.002459420427
+delta_outlet_temperature: min=-0.02719290557, max=0, mean=-0.003225360691
+delta_specific_work: min=-46.06624821, max=0, mean=-8.083974362
+delta_shaft_power: min=-368.5299857, max=0, mean=-49.7442188
+
+MethaneIdeal
+------------
+incidence_specific_loss: min=0, max=1082.572894, mean=270.6096146
+incidence_entropy_generation: min=0, max=3.605375308, mean=0.8976667302
+delta_static_pressure_ratio: min=-0.008953241433, max=0, mean=-0.002098168579
+delta_total_pressure_ratio: min=-0.01124183494, max=0, mean=-0.002378958192
+delta_outlet_temperature: min=-0.04954604187, max=0, mean=-0.005824529031
+delta_specific_work: min=-107.6608636, max=0, mean=-19.29591299
+delta_shaft_power: min=-861.2869091, max=0, mean=-118.471234
+
+MethanePR
+---------
+incidence_specific_loss: min=0, max=1070.056625, mean=267.480936
+incidence_entropy_generation: min=0, max=3.563666063, mean=0.8872797165
+delta_static_pressure_ratio: min=-0.008969840232, max=0, mean=-0.002099021266
+delta_total_pressure_ratio: min=-0.01129128305, max=0, mean=-0.002385417252
+delta_outlet_temperature: min=-0.06717702069, max=0, mean=-0.01052168473
+delta_specific_work: min=-106.4604197, max=0, mean=-19.07797938
+delta_shaft_power: min=-851.6833577, max=0, mean=-117.1301592
+

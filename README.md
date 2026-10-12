@@ -11,6 +11,33 @@ numerical methods.
 The project is developed in C++20 and licensed under
 GPL-3.0-or-later.
 
+## M1.6b.2 — Incidence-aware compressor modeling
+
+The current development milestone introduces a physics-based,
+flow-dependent incidence-loss closure into the nonlinear
+centrifugal compressor solver.
+
+Validation includes:
+
+- Three thermodynamic models: air-like ideal gas,
+  methane ideal gas, and methane Peng-Robinson.
+- 105 paired compressor operating points.
+- 315 successful nonlinear solutions, including
+  zero-coefficient regression checks.
+- Analytical validation of the zero-incidence locus.
+- Independent algebraic incidence-loss validation.
+- Static and total pressure-ratio comparisons.
+
+The incidence coefficient is exploratory, not experimentally
+calibrated. The current cross-gas comparison uses separately
+calibrated blade angles.
+
+GPU execution remains planned rather than implemented.
+
+See [M1.6b.2 validation](docs/M1.6b2_VALIDATION.md)
+for the governing equations, results, limitations, and
+reproducibility instructions.
+
 ## Current status
 
 **M1.4 complete: Validated nonlinear compressor solver

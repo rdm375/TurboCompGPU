@@ -593,3 +593,68 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_operating_incidence_test
     )
 endif()
+
+# M1.6b.2 Stage 3: Incidence-aware nonlinear operating points.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_incidence_operating_point_test
+        tests/incidence_operating_point.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_incidence_operating_point_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME incidence_operating_point
+        COMMAND turbocompgpu_incidence_operating_point_test
+    )
+endif()
+
+# M1.6b.2 Stage 4: Paired incidence compressor-map benchmark.
+add_executable(
+    turbocompgpu_incidence_map_comparison
+    benchmarks/incidence_map_comparison.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_incidence_map_comparison
+    PRIVATE turbocompgpu
+)
+
+# M1.6b.2: Analytical zero-incidence locus validation.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_incidence_locus_test
+        tests/incidence_locus.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_incidence_locus_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME incidence_locus
+        COMMAND turbocompgpu_incidence_locus_test
+    )
+endif()
+
+# M1.6b.2: Independent algebraic incidence-loss oracle.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_incidence_algebraic_test
+        tests/incidence_algebraic.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_incidence_algebraic_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME incidence_algebraic
+        COMMAND turbocompgpu_incidence_algebraic_test
+    )
+endif()
