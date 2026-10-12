@@ -869,3 +869,21 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_throat_geometry_test
     )
 endif()
+
+# M1.6b.4 Stage 6B: Throat-local velocity coordinates.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_throat_velocity_test
+        tests/throat_velocity.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_throat_velocity_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME throat_velocity
+        COMMAND turbocompgpu_throat_velocity_test
+    )
+endif()
