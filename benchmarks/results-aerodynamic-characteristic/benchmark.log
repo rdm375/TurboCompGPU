@@ -1,0 +1,7 @@
+blade_angle_deg=42.781881823
+
+STAGE 7E SUMMARY
+attempted=315
+mapped=315
+failed=0
+output="benchmarks/results-aerodynamic-characteristic/comparison.csv"

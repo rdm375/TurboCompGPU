@@ -1,0 +1,11 @@
+blade_angle_deg=42.781881823
+RPM=9000 peak_found=1 peak_flow=0.51715538082 critical_flow=1.81663276844 interval=1.29947738762 endpoint_Pi_tt=1.14353782322 curvature=-0.0253906002334
+RPM=10500 peak_found=1 peak_flow=0.817166472427 critical_flow=1.85122222645 interval=1.03405575402 endpoint_Pi_tt=1.22133103893 curvature=-0.0244047129727
+RPM=12000 peak_found=1 peak_flow=1.14049496793 critical_flow=1.89202809138 interval=0.751533123452 endpoint_Pi_tt=1.31561598042 curvature=-0.0233583546394
+RPM=13500 peak_found=1 peak_flow=1.49402731937 critical_flow=1.93933664424 interval=0.445309324869 endpoint_Pi_tt=1.427569419 curvature=-0.0223147832989
+RPM=15000 peak_found=1 peak_flow=1.8842575966 critical_flow=1.99348013863 interval=0.109222542033 endpoint_Pi_tt=1.55869298429 curvature=-0.0212818755396
+
+STAGE 7G SUMMARY
+speeds=5
+interior_peaks=5
+output="benchmarks/results-refined-characteristic"

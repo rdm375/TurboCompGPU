@@ -1051,3 +1051,48 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_choking_area_comparison_test
     )
 endif()
+
+# Stage 7B: Low-flow compressor characteristic and choking audit.
+# Diagnostic benchmark; not registered with CTest.
+add_executable(
+    turbocompgpu_low_flow_characteristic
+    benchmarks/low_flow_characteristic.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_low_flow_characteristic
+    PRIVATE turbocompgpu
+)
+
+# Stage 7D: Independently evaluated provisional choking endpoints.
+add_executable(
+    turbocompgpu_choking_characteristic_endpoints
+    benchmarks/choking_characteristic_endpoints.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_choking_characteristic_endpoints
+    PRIVATE turbocompgpu
+)
+
+# Stage 7E: Aerodynamic-loss compressor characteristic comparison.
+add_executable(
+    turbocompgpu_aerodynamic_characteristic
+    benchmarks/aerodynamic_characteristic.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_aerodynamic_characteristic
+    PRIVATE turbocompgpu
+)
+
+# Stage 7G: Refined characteristic extrema and capacity endpoints.
+add_executable(
+    turbocompgpu_refined_characteristic
+    benchmarks/refined_characteristic.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_refined_characteristic
+    PRIVATE turbocompgpu
+)

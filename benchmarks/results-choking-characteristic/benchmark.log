@@ -1,0 +1,11 @@
+RPM=9000 mdot_critical=1.81663276844 Pi_tt=1.14452100178 power_kW=49.6687763812 delta_T0=0.237776809933 delta_p0=1665.33841461 validated=1
+RPM=10500 mdot_critical=1.85122222645 Pi_tt=1.22368876864 power_kW=70.6334521343 delta_T0=0.243344416973 delta_p0=1704.38300628 validated=1
+RPM=12000 mdot_critical=1.89202809138 Pi_tt=1.32118381979 power_kW=96.043787301 delta_T0=0.250047650777 delta_p0=1751.39458966 validated=1
+RPM=13500 mdot_critical=1.93933664424 Pi_tt=1.43968490045 power_kW=126.37591319 delta_T0=0.258002031405 delta_p0=1807.18512973 validated=1
+RPM=15000 mdot_critical=1.99348013863 Pi_tt=1.58245707423 power_kW=162.194774226 delta_T0=0.267346692496 delta_p0=1872.73283726 validated=1
+
+STAGE 7D SUMMARY
+endpoints=5
+all_validated=1
+choke_admissibility_established=0
+output="benchmarks/results-choking-characteristic/endpoints.csv"
