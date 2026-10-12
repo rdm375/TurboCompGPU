@@ -923,3 +923,39 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_incidence_coupled_choking_test
     )
 endif()
+
+# M1.6b.4 Stage 6E: Inlet-to-throat incidence kinematics.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_throat_incidence_test
+        tests/throat_incidence.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_throat_incidence_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME throat_incidence
+        COMMAND turbocompgpu_throat_incidence_test
+    )
+endif()
+
+# M1.6b.4 Stage 6E: Mass-flow-coupled throat incidence.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_predictive_incidence_choking_test
+        tests/predictive_incidence_choking.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_predictive_incidence_choking_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME predictive_incidence_choking
+        COMMAND turbocompgpu_predictive_incidence_choking_test
+    )
+endif()
