@@ -995,3 +995,59 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_passage_turning_sensitivity_test
     )
 endif()
+
+# M1.6b.4 Stage 6H: Choking-boundary diagnostic continuation.
+add_executable(
+    turbocompgpu_choking_continuation
+    benchmarks/choking_continuation.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_choking_continuation
+    PRIVATE turbocompgpu
+)
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_choking_continuation_test
+        tests/choking_continuation.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_choking_continuation_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME choking_continuation
+        COMMAND turbocompgpu_choking_continuation_test
+    )
+endif()
+
+# M1.6b.4 Stage 6H.1: Constant-area blade-angle comparison.
+add_executable(
+    turbocompgpu_choking_area_comparison
+    benchmarks/choking_area_comparison.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_choking_area_comparison
+    PRIVATE turbocompgpu
+)
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_choking_area_comparison_test
+        tests/choking_area_comparison.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_choking_area_comparison_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME choking_area_comparison
+        COMMAND turbocompgpu_choking_area_comparison_test
+    )
+endif()
