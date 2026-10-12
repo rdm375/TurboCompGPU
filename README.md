@@ -145,3 +145,34 @@ https://github.com/rdm375/ThermoGPU
 ## License
 
 GPL-3.0-or-later.
+
+
+## M1.5 — Operating-envelope validation
+
+The M1.5 operating-envelope implementation evaluates centrifugal
+compressor operating points over deterministic mass-flow and
+rotational-speed grids.
+
+The validated experiment includes:
+
+- 70 operating conditions across IdealGas and PengRobinson models.
+- 140 nonlinear solves using independent and continuation initialization.
+- 140/140 converged solutions.
+- 140/140 independently validated solutions.
+- 140/140 solutions passing basic physical-consistency checks.
+- Continuation improvements at all 60 points with available history.
+- Eight operating-envelope visualizations.
+
+Continuation reduced mean Newton iterations by 34.78% for IdealGas
+and 42.45% for PengRobinson.
+
+These are numerical iteration reductions, not measured wall-clock
+speedups.
+
+Surge and choke limits remain unevaluated. The present model uses
+prescribed entropy generation rather than a predictive aerodynamic
+loss model.
+
+See [M1.5 validation](docs/M1.5_VALIDATION.md) for the complete
+experiment and reproducibility instructions.
+

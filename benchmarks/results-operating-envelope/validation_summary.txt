@@ -1,0 +1,17 @@
+Model: IdealGas
+Operating conditions: 35
+Maximum |delta outlet_temperature| = 2.273736754432e-13
+Maximum |delta outlet_pressure| = 8.963979780674e-09
+Maximum |delta specific_work| = 5.093170329928e-11
+Iteration reduction: 34.78%
+Evaluation reduction: 32.79%
+
+Model: PengRobinson
+Operating conditions: 35
+Maximum |delta outlet_temperature| = 1.648459146963e-12
+Maximum |delta outlet_pressure| = 1.618172973394e-08
+Maximum |delta specific_work| = 3.619788913056e-10
+Iteration reduction: 42.45%
+Evaluation reduction: 40.41%
+
+PASS: All paired operating-point comparisons

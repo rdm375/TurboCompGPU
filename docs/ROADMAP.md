@@ -20,13 +20,13 @@ Correctness and physical validity take precedence over acceleration.
 | M1.2 | Thermodynamic foundations | Complete |
 | M1.3 | Impeller aerodynamics and conservation | Complete |
 | M1.4 | Nonlinear solver, validation, optimization | Complete |
-| M1.5 | Operating-envelope exploration | Next |
-| M1.6 | Compressor performance maps | Planned |
+| M1.5 | Operating-envelope exploration | Complete |
+| M1.6 | Compressor performance maps | Next |
 | M1.7 | Operating limits and validity boundaries | Planned |
 | M1.8 | Physical-model extensions and calibration | Planned |
 
-M1.4 numerical and benchmark work is complete.
-See M1.4_VALIDATION.md for supporting evidence.
+M1.4 and M1.5 numerical validation work is complete.
+See M1.4_VALIDATION.md and M1.5_VALIDATION.md for supporting evidence.
 
 ## M1.5 — Operating-envelope exploration
 

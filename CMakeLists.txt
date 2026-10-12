@@ -465,3 +465,25 @@ target_link_libraries(
     turbocompgpu_nonlinear_wall_clock
     PRIVATE turbocompgpu
 )
+
+# M1.5 operating-envelope infrastructure
+
+add_executable(turbocompgpu_operating_envelope
+    benchmarks/operating_envelope.cpp
+)
+target_link_libraries(turbocompgpu_operating_envelope
+    PRIVATE turbocompgpu
+)
+
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_operating_point_test
+        tests/operating_point.cpp
+    )
+    target_link_libraries(turbocompgpu_operating_point_test
+        PRIVATE turbocompgpu
+    )
+    add_test(
+        NAME operating_point
+        COMMAND turbocompgpu_operating_point_test
+    )
+endif()
