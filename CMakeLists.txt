@@ -1195,3 +1195,112 @@ target_link_libraries(
     turbocompgpu_constant_area_convergence
     PRIVATE turbocompgpu
 )
+
+
+# Stage 8B.1: lossless complete-stage reference
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_complete_stage_test
+        tests/complete_stage.cpp
+    )
+    target_link_libraries(turbocompgpu_complete_stage_test
+        PRIVATE turbocompgpu
+    )
+    add_test(
+        NAME complete_stage_reference
+        COMMAND turbocompgpu_complete_stage_test
+    )
+endif()
+
+
+# Stage 8B.2: fixed-geometry vaneless diffuser
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_vaneless_diffuser_test
+        tests/vaneless_diffuser.cpp
+    )
+    target_link_libraries(turbocompgpu_vaneless_diffuser_test
+        PRIVATE turbocompgpu
+    )
+    add_test(
+        NAME vaneless_diffuser
+        COMMAND turbocompgpu_vaneless_diffuser_test
+    )
+endif()
+
+
+# Stage 8B.3: impeller/diffuser integration
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_impeller_diffuser_integration_test
+        tests/impeller_diffuser_integration.cpp
+    )
+    target_link_libraries(turbocompgpu_impeller_diffuser_integration_test
+        PRIVATE turbocompgpu
+    )
+    add_test(
+        NAME impeller_diffuser_integration
+        COMMAND turbocompgpu_impeller_diffuser_integration_test
+    )
+endif()
+
+# Long-running validation tests are retained but disabled
+# during routine development.
+option(
+    TURBOCOMP_ENABLE_SLOW_TESTS
+    "Enable long-running validation tests"
+    OFF
+)
+
+if(BUILD_TESTING AND NOT TURBOCOMP_ENABLE_SLOW_TESTS)
+    set_tests_properties(
+        passage_turning_sensitivity
+        PROPERTIES DISABLED TRUE
+    )
+endif()
+
+
+# Stage 8B.4a: diffuser characteristic analysis
+add_executable(turbocompgpu_diffuser_characteristic
+    benchmarks/diffuser_characteristic.cpp
+)
+target_link_libraries(turbocompgpu_diffuser_characteristic
+    PRIVATE turbocompgpu
+)
+if(BUILD_TESTING)
+    add_test(
+        NAME diffuser_characteristic
+        COMMAND turbocompgpu_diffuser_characteristic
+    )
+    set_tests_properties(
+        diffuser_characteristic
+        PROPERTIES
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
+
+# Stage 8B.4b: full characteristic and sonic diagnostics
+if(BUILD_TESTING)
+    add_test(
+        NAME diffuser_sonic_characteristic
+        COMMAND turbocompgpu_diffuser_characteristic
+    )
+    set_tests_properties(
+        diffuser_sonic_characteristic
+        PROPERTIES
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
+
+# Stage 8B.4c: branch-aware vaneless diffuser
+add_executable(turbocompgpu_vaneless_diffuser_branches_test
+    tests/vaneless_diffuser_branches.cpp
+)
+target_link_libraries(turbocompgpu_vaneless_diffuser_branches_test
+    PRIVATE turbocompgpu
+)
+if(BUILD_TESTING)
+    add_test(
+        NAME vaneless_diffuser_branches
+        COMMAND turbocompgpu_vaneless_diffuser_branches_test
+    )
+endif()
