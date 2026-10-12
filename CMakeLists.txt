@@ -851,3 +851,21 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_inlet_coupled_choking_test
     )
 endif()
+
+# M1.6b.4 Stage 6A: Physical throat geometry.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_throat_geometry_test
+        tests/throat_geometry.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_throat_geometry_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME throat_geometry
+        COMMAND turbocompgpu_throat_geometry_test
+    )
+endif()
