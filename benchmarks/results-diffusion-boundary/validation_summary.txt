@@ -1,0 +1,50 @@
+TurboCompGPU M1.6b.3 - Diffusion Activation Boundary
+====================================================
+
+Model:
+  Relative-flow diffusion ratio: Dr = W1 / W2
+  Critical diffusion ratio: 1.5
+  Diffusion coefficient: 1.0 (exploratory)
+  Diffusion loss: 0.5*K*W1^2*max(0,Dr-1.5)^2
+
+Operating conditions:
+  Inlet temperature: 300 K
+  Inlet pressure: 500000 Pa
+  Mass-flow search interval: [2,8] kg/s
+  Speeds: 9000,10500,12000,13500,15000 rpm
+  Models: AirLikeIdeal, MethaneIdeal, MethanePR
+
+Validation:
+  Cases: 15
+  Converged boundaries: 12
+  Unbracketed cases: 3
+  Crossing-direction checks: 12/12 passed
+  Coupled nonlinear validation: 12/12 passed
+  Maximum |Dr-1.5|: 9.30379395747e-09
+  Maximum bracket width (kg/s): 7.15255737305e-07
+  Maximum |delta outlet pressure| (Pa): 2.18860805035e-08
+  Maximum |delta outlet temperature| (K): 1.13686837722e-13
+  Maximum coupled full residual norm: 9.45596597985e-14
+
+Converged activation boundaries:
+  Model            RPM       Mass flow (kg/s)     Phi1
+  AirLikeIdeal        9000         2.750639528  0.299416238
+  AirLikeIdeal       10500         3.858029038  0.359965080
+  AirLikeIdeal       12000         5.185808957  0.423369382
+  AirLikeIdeal       13500         6.840074420  0.496376528
+  MethaneIdeal       10500         2.015268028  0.339483558
+  MethaneIdeal       12000         2.614302576  0.385345094
+  MethaneIdeal       13500         3.297035813  0.431981477
+  MethaneIdeal       15000         4.094043404  0.482765707
+  MethanePR          10500         2.038896143  0.339757970
+  MethanePR          12000         2.646283984  0.385850485
+  MethanePR          13500         3.339407384  0.432812189
+  MethanePR          15000         4.149770945  0.484057234
+
+Interpretation:
+  The boundary identifies activation of an exploratory
+  relative-flow diffusion-loss correlation.
+  It is not an experimentally validated surge boundary.
+  Unbracketed means no endpoint sign change over [2,8] kg/s;
+  it does not prove that no root exists within or outside
+  that interval.

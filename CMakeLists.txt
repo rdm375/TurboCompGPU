@@ -658,3 +658,106 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_incidence_algebraic_test
     )
 endif()
+
+# M1.6b.3 Stage 1: Independent diffusion-loss kernel.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_diffusion_loss_test
+        tests/diffusion_loss.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_diffusion_loss_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME diffusion_loss
+        COMMAND turbocompgpu_diffusion_loss_test
+    )
+endif()
+
+# M1.6b.3 Stage 2: Self-consistent diffusion coupling.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_diffusion_operating_point_test
+        tests/diffusion_operating_point.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_diffusion_operating_point_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME diffusion_operating_point
+        COMMAND turbocompgpu_diffusion_operating_point_test
+    )
+endif()
+
+# M1.6b.3 Stage 3: Diffusion-aware compressor-map comparison.
+add_executable(
+    turbocompgpu_diffusion_map_comparison
+    benchmarks/diffusion_map_comparison.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_diffusion_map_comparison
+    PRIVATE turbocompgpu
+)
+
+# M1.6b.3 Stage 4A: Diffusion activation-boundary root finder.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_diffusion_boundary_test
+        tests/diffusion_boundary.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_diffusion_boundary_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME diffusion_boundary
+        COMMAND turbocompgpu_diffusion_boundary_test
+    )
+endif()
+
+# M1.6b.3 Stage 4B: Operating diffusion-boundary integration.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_operating_diffusion_boundary_test
+        tests/operating_diffusion_boundary.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_operating_diffusion_boundary_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME operating_diffusion_boundary
+        COMMAND turbocompgpu_operating_diffusion_boundary_test
+    )
+endif()
+
+# M1.6b.3 Stage 4B: Diffusion activation-boundary sweep.
+add_executable(
+    turbocompgpu_diffusion_boundary_sweep
+    benchmarks/diffusion_boundary_sweep.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_diffusion_boundary_sweep
+    PRIVATE turbocompgpu
+)
+
+# M1.6b.3: End-to-end diffusion-boundary regression.
+if(BUILD_TESTING)
+    add_test(
+        NAME diffusion_boundary_sweep
+        COMMAND turbocompgpu_diffusion_boundary_sweep
+            "${CMAKE_CURRENT_BINARY_DIR}/diffusion_boundary_ctest.csv"
+    )
+endif()
