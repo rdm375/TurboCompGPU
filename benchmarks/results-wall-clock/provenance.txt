@@ -1,0 +1,100 @@
+===== DATE =====
+2026-10-11T19:14:26-05:00
+
+===== GIT =====
+9b85beafb0878ea4b496934f0488e1b50401343f
+ M .gitignore
+ M CMakeLists.txt
+ M include/turbocompgpu/fast_nonlinear_residual.hpp
+ M include/turbocompgpu/fast_nonlinear_solver.hpp
+ M include/turbocompgpu/nonlinear_solver.hpp
+?? benchmarks/
+?? include/turbocompgpu/fast_nonlinear_residual.hpp.pre-m14d3
+?? include/turbocompgpu/fast_nonlinear_solver.hpp.pre-m14d3
+?? include/turbocompgpu/nonlinear_solver.hpp.pre-m14d3
+?? requirements-lock.txt
+?? requirements.txt
+?? tests/fast_nonlinear_reference_invariance.cpp
+?? tests/nonlinear_solver_failure_paths.cpp
+?? tests/nonlinear_solver_type_safety.cpp
+
+===== CPU =====
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           39 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  8
+On-line CPU(s) list:                     0-7
+Vendor ID:                               GenuineIntel
+Model name:                              Intel(R) Core(TM) i7-6920HQ CPU @ 2.90GHz
+CPU family:                              6
+Model:                                   94
+Thread(s) per core:                      2
+Core(s) per socket:                      4
+Socket(s):                               1
+Stepping:                                3
+CPU(s) scaling MHz:                      100%
+CPU max MHz:                             2900.0000
+CPU min MHz:                             800.0000
+BogoMIPS:                                5799.77
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb pti ssbd ibrs ibpb stibp tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust sgx bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi md_clear flush_l1d arch_capabilities
+Virtualization:                          VT-x
+L1d cache:                               128 KiB (4 instances)
+L1i cache:                               128 KiB (4 instances)
+L2 cache:                                1 MiB (4 instances)
+L3 cache:                                8 MiB (1 instance)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-7
+Vulnerability Gather data sampling:      Vulnerable: No microcode
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             KVM: Mitigation: Split huge pages
+Vulnerability L1tf:                      Mitigation; PTE Inversion; VMX conditional cache flushes, SMT vulnerable
+Vulnerability Mds:                       Mitigation; Clear CPU buffers; SMT vulnerable
+Vulnerability Meltdown:                  Mitigation; PTI
+Vulnerability Mmio stale data:           Mitigation; Clear CPU buffers; SMT vulnerable
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Mitigation; IBRS
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; IBRS; IBPB conditional; STIBP conditional; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected
+Vulnerability Srbds:                     Mitigation; Microcode
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Mitigation; TSX disabled
+Vulnerability Vmscape:                   Mitigation; IBPB before exit to userspace
+
+===== COMPILER =====
+c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+
+===== CMAKE =====
+cmake version 4.2.3
+
+===== BUILD CONFIGURATION =====
+CMAKE_BUILD_TYPE:STRING=Release
+CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
+CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
+ThermoGPU_DIR:PATH=/home/redacted/Sync/ThermoGPU/install-release-cpu/lib/cmake/ThermoGPU
+
+===== PYTHON =====
+Python 3.14.4
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.66.1
+iniconfig==2.3.1
+kiwisolver==1.5.1
+matplotlib==3.11.2
+numpy==2.5.4
+packaging==26.3
+pandas==3.0.6
+pillow==12.3.0
+pluggy==1.6.0
+Pygments==2.21.0
+pyparsing==3.3.3
+pytest==9.1.1
+python-dateutil==2.9.0.post0
+six==1.17.0
+
+===== KERNEL =====
+Linux dell7710 7.0.0-34-generic #34-Ubuntu SMP PREEMPT_DYNAMIC Wed Sep  2 14:29:37 UTC 2026 x86_64 GNU/Linux

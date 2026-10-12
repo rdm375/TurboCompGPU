@@ -5,7 +5,10 @@
 
 namespace turbocompgpu {
 
-inline NonlinearSolverResult solve_fast_nonlinear_compressor(
+using FastNonlinearSolverResult =
+    BasicNonlinearSolverResult<FastNonlinearResidualResult>;
+
+inline FastNonlinearSolverResult solve_fast_nonlinear_compressor(
     const FastResidualContext& context,
     const NonlinearUnknowns& initial_guess,
     const NonlinearSolverOptions& options = {})

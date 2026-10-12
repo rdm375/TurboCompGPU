@@ -1,0 +1,8 @@
+Model           Solver     Total Converged Recovered OtherRoot    Failed  Iterations Evaluations    Rejected
+IdealGas        full         192       192       192         0         0         732        3852           0
+IdealGas        fast         192       192       192         0         0         732        3852           0
+PengRobinson    full         192       192       192         0         0         744        3912           0
+PengRobinson    fast         192       192       192         0         0         744        3912           0
+
+CSV: "benchmarks/results-convergence-basin/basin.csv"
+PASS: Convergence-basin experiment completed

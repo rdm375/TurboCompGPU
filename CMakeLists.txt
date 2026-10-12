@@ -394,3 +394,74 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_fast_nonlinear_solver_test
     )
 endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_nonlinear_solver_type_safety_test
+        tests/nonlinear_solver_type_safety.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_nonlinear_solver_type_safety_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME nonlinear_solver_type_safety
+        COMMAND turbocompgpu_nonlinear_solver_type_safety_test
+    )
+endif()
+
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_fast_nonlinear_reference_invariance_test
+        tests/fast_nonlinear_reference_invariance.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_fast_nonlinear_reference_invariance_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME fast_nonlinear_reference_invariance
+        COMMAND turbocompgpu_fast_nonlinear_reference_invariance_test
+    )
+endif()
+
+add_executable(
+    turbocompgpu_convergence_basin
+    benchmarks/convergence_basin.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_convergence_basin
+    PRIVATE turbocompgpu
+)
+
+add_executable(
+    turbocompgpu_nonlinear_solver_failure_paths_test
+    tests/nonlinear_solver_failure_paths.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_nonlinear_solver_failure_paths_test
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME nonlinear_solver_failure_paths
+    COMMAND turbocompgpu_nonlinear_solver_failure_paths_test
+)
+
+# M1.4d-3.5: Wall-clock performance benchmark.
+# Not registered with CTest.
+add_executable(
+    turbocompgpu_nonlinear_wall_clock
+    benchmarks/nonlinear_wall_clock.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_nonlinear_wall_clock
+    PRIVATE turbocompgpu
+)

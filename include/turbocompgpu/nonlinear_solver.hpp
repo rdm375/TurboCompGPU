@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <functional>
+#include <type_traits>
 #include <limits>
 #include <optional>
 #include <stdexcept>
@@ -59,11 +60,12 @@ struct NonlinearSolverOptions {
     double jacobian_singularity_tolerance = 1.0e-12;
 };
 
-struct NonlinearSolverResult {
+template <typename ResidualResult>
+struct BasicNonlinearSolverResult {
     NonlinearSolveStatus status =
         NonlinearSolveStatus::InvalidInput;
 
-    std::optional<NonlinearResidualResult> solution;
+    std::optional<ResidualResult> solution;
 
     int iterations = 0;
     int residual_evaluations = 0;
@@ -81,12 +83,16 @@ struct NonlinearSolverResult {
     }
 };
 
+using NonlinearSolverResult =
+    BasicNonlinearSolverResult<NonlinearResidualResult>;
+
 namespace nonlinear_detail {
 
 using Vector = std::array<double, 2>;
 
+template <typename ResidualResult>
 inline Vector residual_vector(
-    const NonlinearResidualResult& r)
+    const ResidualResult& r)
 {
     return {r.normalized_energy, r.normalized_entropy};
 }
@@ -159,15 +165,18 @@ inline bool solve_2x2(
 
 } // namespace nonlinear_detail
 
-inline NonlinearSolverResult solve_nonlinear_compressor_with_evaluator(
-    const std::function<NonlinearResidualResult(
-        const NonlinearUnknowns&)>& evaluator,
+template <typename Evaluator>
+inline auto solve_nonlinear_compressor_with_evaluator(
+    Evaluator&& evaluator,
     const NonlinearUnknowns& initial_guess,
     const NonlinearSolverOptions& options = {})
 {
     using nonlinear_detail::Vector;
 
-    NonlinearSolverResult result;
+    using ResidualResult = std::decay_t<
+        std::invoke_result_t<Evaluator&, const NonlinearUnknowns&>>;
+
+    BasicNonlinearSolverResult<ResidualResult> result;
 
     if (!nonlinear_detail::valid_options(options) ||
         !std::isfinite(initial_guess.outlet_temperature) ||
@@ -185,7 +194,7 @@ inline NonlinearSolverResult solve_nonlinear_compressor_with_evaluator(
     };
 
     auto evaluate = [&](const Vector& point)
-        -> std::optional<NonlinearResidualResult>
+        -> std::optional<ResidualResult>
     {
         ++result.residual_evaluations;
 

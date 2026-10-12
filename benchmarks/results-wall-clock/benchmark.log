@@ -1,0 +1,9 @@
+Completed IdealGas loss=0 repetitions=1000
+Completed IdealGas loss=20 repetitions=1000
+Completed IdealGas loss=40 repetitions=1000
+Completed PengRobinson loss=0 repetitions=1000
+Completed PengRobinson loss=20 repetitions=1000
+Completed PengRobinson loss=40 repetitions=1000
+CSV: benchmarks/results-wall-clock/timings.csv
+Checksum: 6.36988e+06
+PASS: Wall-clock benchmark completed

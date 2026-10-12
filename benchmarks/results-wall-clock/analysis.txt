@@ -1,0 +1,46 @@
+
+TIMING DISTRIBUTIONS (microseconds)
+
+       model  loss           mode  samples  minimum_us   p05_us  median_us   p95_us
+    IdealGas     0           fast     1000      2.1580   3.2128     3.6105   5.0731
+    IdealGas     0 fast_validated     1000      7.2570  11.4878    14.2680  17.3530
+    IdealGas     0           full     1000     82.6700 139.6808   173.1390 200.6539
+    IdealGas    20           fast     1000      3.0620   3.3289     3.6250   4.6982
+    IdealGas    20 fast_validated     1000     10.6610  13.0740    14.6385  15.3959
+    IdealGas    20           full     1000    161.1040 169.7936   173.5365 186.8810
+    IdealGas    40           fast     1000      2.1880   2.2270     3.4700   4.5732
+    IdealGas    40 fast_validated     1000      7.2370   7.3279    13.7875  15.7568
+    IdealGas    40           full     1000     82.4720  82.9389   172.4445 185.1623
+PengRobinson     0           fast     1000      8.2920   8.3610     8.4520  13.9106
+PengRobinson     0 fast_validated     1000     32.0460  32.2469    32.4590  55.2383
+PengRobinson     0           full     1000    505.3580 508.6515   515.7765 892.8682
+PengRobinson    20           fast     1000      8.2820   8.3520     8.4120  15.3424
+PengRobinson    20 fast_validated     1000     32.0250  32.2159    32.3650  56.1678
+PengRobinson    20           full     1000    505.4160 508.4948   513.7920 896.5885
+PengRobinson    40           fast     1000      8.2960   8.3620     8.4390  13.9982
+PengRobinson    40 fast_validated     1000     32.0610  32.2160    32.4180  55.1466
+PengRobinson    40           full     1000    505.0790 508.5639   515.0245 878.1428
+
+MEDIAN-BASED SPEEDUPS
+
+                   full_us  fast_us  validated_us  fast_speedup  validated_speedup  validation_overhead_us
+model        loss
+IdealGas     0    173.1390   3.6105       14.2680       47.9543            12.1348                 10.6575
+             20   173.5365   3.6250       14.6385       47.8721            11.8548                 11.0135
+             40   172.4445   3.4700       13.7875       49.6958            12.5073                 10.3175
+PengRobinson 0    515.7765   8.4520       32.4590       61.0242            15.8901                 24.0070
+             20   513.7920   8.4120       32.3650       61.0785            15.8749                 23.9530
+             40   515.0245   8.4390       32.4180       61.0291            15.8870                 23.9790
+
+MEDIAN PAIRED SPEEDUP RATIOS
+
+mode               fast_ratio  validated_ratio
+model        loss
+IdealGas     0        47.2885          12.1651
+             20       48.1373          11.9694
+             40       44.2377          11.8276
+PengRobinson 0        61.0155          15.8696
+             20       61.0710          15.8749
+             40       60.9912          15.8602
+
+PASS: Timing analysis completed

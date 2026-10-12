@@ -8,6 +8,31 @@
 
 namespace turbocompgpu {
 
+// Lightweight residual result.
+//
+// Unlike NonlinearResidualResult, this type contains no
+// full-system validation object. Independent validation
+// must be requested explicitly.
+
+struct FastNonlinearResidualResult {
+    NonlinearUnknowns unknowns;
+
+    double outlet_pressure;
+
+    double energy_residual;
+    double entropy_residual;
+
+    double normalized_energy;
+    double normalized_entropy;
+    double residual_norm;
+
+    double outlet_meridional_velocity;
+    double outlet_whirl;
+
+    double euler_specific_work;
+    double shaft_torque;
+};
+
 struct FastResidualContext {
     const thermomodel::Model* model = nullptr;
 
@@ -169,7 +194,7 @@ inline FastResidualContext make_fast_residual_context(
     return context;
 }
 
-inline NonlinearResidualResult evaluate_fast_nonlinear_residual(
+inline FastNonlinearResidualResult evaluate_fast_nonlinear_residual(
     const FastResidualContext& context,
     const NonlinearUnknowns& unknowns)
 {
@@ -265,13 +290,8 @@ inline NonlinearResidualResult evaluate_fast_nonlinear_residual(
             "Non-finite fast residual result");
     }
 
-    // The final member is intentionally default-initialized.
-    //
-    // Fast residual evaluation does NOT reconstruct or
-    // validate the complete five-equation system.
-    //
-    // Consumers must explicitly call the original full
-    // evaluator when independent validation is required.
+    // No full-system result is constructed here.
+    // Independent validation is performed separately.
 
     return {
         unknowns,
@@ -284,14 +304,13 @@ inline NonlinearResidualResult evaluate_fast_nonlinear_residual(
         vm2,
         whirl,
         euler_work,
-        torque,
-        {}
+        torque
     };
 }
 
 inline ImpellerSystemWithLossResult validate_fast_solution(
     const FastResidualContext& context,
-    const NonlinearResidualResult& solution)
+    const FastNonlinearResidualResult& solution)
 {
     if (context.model == nullptr) {
         throw std::invalid_argument(

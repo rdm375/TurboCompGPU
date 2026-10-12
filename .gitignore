@@ -28,3 +28,15 @@ __pycache__/
 
 # Generated results
 results/
+
+# Python virtual environment
+.venv/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Python build artifacts
+*.egg-info/
+dist/
