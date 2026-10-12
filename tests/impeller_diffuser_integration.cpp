@@ -1,5 +1,6 @@
 #include <turbocompgpu/vaneless_diffuser.hpp>
 #include <turbocompgpu/complete_stage_branches.hpp>
+#include <turbocompgpu/complete_stage_solver.hpp>
 
 #include <thermomodel/ideal_gas.hpp>
 #include <thermomodel/peng_robinson.hpp>
@@ -425,6 +426,156 @@ void run_case(
         supersonic_stage.combined_energy_residual,
         0.0,
         1.0e-7);
+
+
+    // Stage 8B.5a: one-call complete-stage orchestration.
+
+    const auto one_call = evaluate_complete_stage(
+        model,
+        model,
+        geometry,
+        diffuser_geometry,
+        request,
+        scales,
+        options);
+
+    check(
+        one_call.complete(),
+        "One-call subsonic complete-stage solve failed");
+
+    check(
+        one_call.impeller_valid(),
+        "One-call impeller validation failed");
+
+    check(
+        one_call.station3_valid(),
+        "One-call subsonic station 3 missing");
+
+    check(
+        one_call.stage->branch == DiffuserBranch::Subsonic,
+        "One-call default branch mismatch");
+
+    check_close(
+        "One-call impeller pressure",
+        one_call.impeller.outlet_pressure,
+        impeller.outlet_pressure);
+
+    check_close(
+        "One-call impeller work",
+        one_call.impeller.specific_work,
+        impeller.specific_work);
+
+    check_close(
+        "One-call subsonic pressure",
+        one_call.stage->station3->pressure,
+        stage.station3->pressure);
+
+    check_close(
+        "One-call subsonic critical capacity",
+        one_call.stage->diffuser_critical_mass_flow,
+        stage.diffuser_critical_mass_flow);
+
+    check_close(
+        "One-call combined energy residual",
+        one_call.stage->combined_energy_residual,
+        0.0,
+        1.0e-7);
+
+    const auto one_call_supersonic =
+        evaluate_complete_stage(
+            model,
+            model,
+            geometry,
+            diffuser_geometry,
+            request,
+            scales,
+            options,
+            DiffuserBranch::Supersonic);
+
+    check(
+        one_call_supersonic.complete(),
+        "One-call supersonic complete-stage solve failed");
+
+    check(
+        one_call_supersonic.station3_valid(),
+        "One-call supersonic station 3 missing");
+
+    check(
+        one_call_supersonic.stage->station3->meridional_mach > 1.0,
+        "One-call supersonic Mach classification failed");
+
+    check_close(
+        "One-call supersonic pressure",
+        one_call_supersonic.stage->station3->pressure,
+        supersonic_stage.station3->pressure);
+
+    // A deliberately invalid validation tolerance must
+    // produce an impeller failure, not a diffuser attempt.
+
+    const auto failed_impeller =
+        evaluate_complete_stage(
+            model,
+            model,
+            geometry,
+            diffuser_geometry,
+            request,
+            scales,
+            options,
+            DiffuserBranch::Subsonic,
+            -1.0);
+
+    check(
+        failed_impeller.status ==
+            CompleteStageStatus::ImpellerFailed,
+        "Invalid tolerance did not fail impeller stage");
+
+    check(
+        !failed_impeller.stage.has_value(),
+        "Diffuser attempted after impeller failure");
+
+    // Deliberately violate the station-2 radius interface.
+    // The impeller must remain valid and available.
+
+    auto invalid_diffuser_geometry = diffuser_geometry;
+    invalid_diffuser_geometry.inlet_radius *= 1.1;
+
+    const auto failed_diffuser =
+        evaluate_complete_stage(
+            model,
+            model,
+            geometry,
+            invalid_diffuser_geometry,
+            request,
+            scales,
+            options);
+
+    check(
+        failed_diffuser.status ==
+            CompleteStageStatus::DiffuserFailed,
+        "Invalid diffuser geometry did not fail");
+
+    check(
+        failed_diffuser.impeller_valid(),
+        "Diffuser failure invalidated impeller");
+
+    check(
+        !failed_diffuser.stage.has_value(),
+        "Invalid interface unexpectedly produced a stage");
+
+    check_close(
+        "Preserved impeller pressure after diffuser failure",
+        failed_diffuser.impeller.outlet_pressure,
+        impeller.outlet_pressure);
+
+    std::cout
+        << model_name
+        << " one-call complete stage:"
+        << " p3_sub=" << one_call.stage->station3->pressure
+        << " p3_super="
+        << one_call_supersonic.stage->station3->pressure
+        << " impeller_failure=PASS"
+        << " diffuser_failure=PASS"
+        << '\n';
 
     std::cout
         << model_name
