@@ -977,3 +977,21 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_passage_turning_choking_test
     )
 endif()
+
+# M1.6b.4 Stage 6G: Implicit passage-turning sensitivity.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_passage_turning_sensitivity_test
+        tests/passage_turning_sensitivity.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_passage_turning_sensitivity_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME passage_turning_sensitivity
+        COMMAND turbocompgpu_passage_turning_sensitivity_test
+    )
+endif()
