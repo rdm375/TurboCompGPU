@@ -557,3 +557,39 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_thermodynamic_limit_test
     )
 endif()
+
+# M1.6b.2: Independent aerodynamic incidence-loss kernel.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_incidence_loss_test
+        tests/incidence_loss.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_incidence_loss_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME incidence_loss
+        COMMAND turbocompgpu_incidence_loss_test
+    )
+endif()
+
+# M1.6b.2 Stage 2: Operating-point incidence calibration.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_operating_incidence_test
+        tests/operating_incidence.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_operating_incidence_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME operating_incidence
+        COMMAND turbocompgpu_operating_incidence_test
+    )
+endif()
