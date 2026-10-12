@@ -487,3 +487,44 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_operating_point_test
     )
 endif()
+
+# M1.6a: Compressor-map coordinate conventions.
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_map_coordinates_test
+        tests/map_coordinates.cpp
+    )
+
+    target_link_libraries(turbocompgpu_map_coordinates_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME map_coordinates
+        COMMAND turbocompgpu_map_coordinates_test
+    )
+endif()
+
+# M1.6a: EOS-consistent compressor-map postprocessing.
+if(BUILD_TESTING)
+    add_executable(turbocompgpu_compressor_map_test
+        tests/compressor_map.cpp
+    )
+
+    target_link_libraries(turbocompgpu_compressor_map_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME compressor_map
+        COMMAND turbocompgpu_compressor_map_test
+    )
+endif()
+
+# M1.6a: Corrected-coordinate compressor-map envelope.
+add_executable(turbocompgpu_compressor_map_envelope
+    benchmarks/compressor_map_envelope.cpp
+)
+
+target_link_libraries(turbocompgpu_compressor_map_envelope
+    PRIVATE turbocompgpu
+)

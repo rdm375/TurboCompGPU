@@ -1,0 +1,12 @@
+M1.6a compressor-map validation
+================================
+M1.5 baseline comparison: PASS
+Corrected-coordinate identities: PASS
+Total-pressure-ratio identity: PASS
+Operating-limit classification: PASS
+Independent/continuation pairs: 70
+
+              cases  min_corrected_flow  max_corrected_flow  min_total_ratio  max_total_ratio  min_ratio_difference  max_ratio_difference
+model
+IdealGas         70            0.412242            1.620188         1.201174         2.201083              0.088714              0.660260
+PengRobinson     70            0.412184            1.596369         1.066616         1.582301              0.010464              0.296245
