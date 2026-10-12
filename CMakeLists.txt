@@ -905,3 +905,21 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_geometry_coupled_choking_test
     )
 endif()
+
+# M1.6b.4 Stage 6D: Prescribed-incidence throat choking.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_incidence_coupled_choking_test
+        tests/incidence_coupled_choking.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_incidence_coupled_choking_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME incidence_coupled_choking
+        COMMAND turbocompgpu_incidence_coupled_choking_test
+    )
+endif()
