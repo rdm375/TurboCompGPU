@@ -761,3 +761,57 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_BINARY_DIR}/diffusion_boundary_ctest.csv"
     )
 endif()
+
+# M1.6b.4 Stage 1: EOS-consistent isentropic sound speed.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_isentropic_sound_speed_test
+        tests/isentropic_sound_speed.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_isentropic_sound_speed_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME isentropic_sound_speed
+        COMMAND turbocompgpu_isentropic_sound_speed_test
+    )
+endif()
+
+# M1.6b.4 Stage 2: EOS-consistent choking mass flux.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_choking_mass_flux_test
+        tests/choking_mass_flux.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_choking_mass_flux_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME choking_mass_flux
+        COMMAND turbocompgpu_choking_mass_flux_test
+    )
+endif()
+
+# M1.6b.4 Stage 3: Independent thermodynamic validation.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_choking_independent_validation_test
+        tests/choking_independent_validation.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_choking_independent_validation_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME choking_independent_validation
+        COMMAND turbocompgpu_choking_independent_validation_test
+    )
+endif()
