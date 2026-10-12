@@ -127,6 +127,8 @@ requirements.txt.
 - Adaptive sampling and sparse tensor-product interpolation.
 - Integration with transient pipeline simulation.
 
+See [Development Roadmap](docs/ROADMAP.md) for milestone details.
+
 ## Development philosophy
 
 1. Establish a correct scalar numerical reference.
