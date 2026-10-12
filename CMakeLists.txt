@@ -1359,3 +1359,14 @@ target_link_libraries(
     turbocompgpu_complete_stage_capacity_common_geometry
     PRIVATE turbocompgpu
 )
+
+
+# Stage 8B.5c.2: fixed-radius diffuser width sensitivity.
+add_executable(
+    turbocompgpu_complete_stage_width_sensitivity
+    benchmarks/complete_stage_width_sensitivity.cpp
+)
+target_link_libraries(
+    turbocompgpu_complete_stage_width_sensitivity
+    PRIVATE turbocompgpu
+)
