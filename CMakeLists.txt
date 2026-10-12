@@ -959,3 +959,21 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_predictive_incidence_choking_test
     )
 endif()
+
+# M1.6b.4 Stage 6F: Parameterized passage turning.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_passage_turning_choking_test
+        tests/passage_turning_choking.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_passage_turning_choking_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME passage_turning_choking
+        COMMAND turbocompgpu_passage_turning_choking_test
+    )
+endif()
