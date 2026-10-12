@@ -1,0 +1,14 @@
+M1.6b.1 controlled thermodynamic comparison
+==============================================
+105 operating points: PASS
+M1.6a baseline comparison: PASS
+Pressure-ratio identities: PASS
+Power identity: PASS
+Matched methane EOS density identities: PASS
+
+MethanePR minus MethaneIdeal:
+inlet_density: min=0.03507695685, max=0.03507695685, mean=0.03507695685
+outlet_density: min=0.03736125347, max=0.048052985, mean=0.04231108524
+static_pressure_ratio: min=0.0007460315434, max=0.003359238635, mean=0.001934200146
+total_pressure_ratio: min=0.001793228432, max=0.007684110224, mean=0.004366806088
+specific_work: min=39.73974323, max=256.3448293, mean=130.7780543

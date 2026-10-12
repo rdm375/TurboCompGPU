@@ -528,3 +528,32 @@ add_executable(turbocompgpu_compressor_map_envelope
 target_link_libraries(turbocompgpu_compressor_map_envelope
     PRIVATE turbocompgpu
 )
+
+# M1.6b.1: Controlled thermodynamic-model comparison.
+add_executable(
+    turbocompgpu_thermodynamic_comparison
+    benchmarks/thermodynamic_comparison.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_thermodynamic_comparison
+    PRIVATE turbocompgpu
+)
+
+# M1.6b.1: Matched-methane ideal-gas limiting behavior.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_thermodynamic_limit_test
+        tests/thermodynamic_limit.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_thermodynamic_limit_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME thermodynamic_limit
+        COMMAND turbocompgpu_thermodynamic_limit_test
+    )
+endif()
