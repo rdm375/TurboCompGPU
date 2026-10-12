@@ -887,3 +887,21 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_throat_velocity_test
     )
 endif()
+
+# M1.6b.4 Stage 6C: Geometry-coupled inlet choking.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_geometry_coupled_choking_test
+        tests/geometry_coupled_choking.cpp
+    )
+
+    target_link_libraries(
+        turbocompgpu_geometry_coupled_choking_test
+        PRIVATE turbocompgpu
+    )
+
+    add_test(
+        NAME geometry_coupled_choking
+        COMMAND turbocompgpu_geometry_coupled_choking_test
+    )
+endif()

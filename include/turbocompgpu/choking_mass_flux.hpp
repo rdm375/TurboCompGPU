@@ -180,7 +180,22 @@ inline ChokingMassFluxResult evaluate_choking_mass_flux(
                 0.5 * sound.sound_speed_squared
             });
 
-        if (std::abs(f) <= 1.0e-10 * energy_scale) {
+        // Terminate on the requested energy accuracy,
+        // or when the pressure bracket is exhausted.
+        //
+        // The returned energy_residual remains the
+        // independently computed physical residual.
+        const double pressure_scale =
+            std::max(1.0, std::abs(pressure));
+
+        const bool energy_converged =
+            std::abs(f) <= 1.0e-12 * energy_scale;
+
+        const bool pressure_converged =
+            (upper - lower) <=
+            1.0e-13 * pressure_scale;
+
+        if (energy_converged || pressure_converged) {
 
             return {
                 state.T,
