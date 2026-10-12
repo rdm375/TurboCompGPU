@@ -1337,3 +1337,25 @@ target_link_libraries(
     turbocompgpu_complete_stage_capacity_extended
     PRIVATE turbocompgpu
 )
+
+
+# Stage 8B.5c.1: identical diffuser geometry for both EOS.
+add_executable(
+    turbocompgpu_complete_stage_boundaries_common_geometry
+    benchmarks/complete_stage_boundaries_common_geometry.cpp
+)
+target_link_libraries(
+    turbocompgpu_complete_stage_boundaries_common_geometry
+    PRIVATE turbocompgpu
+)
+
+
+# Stage 8B.5c.1: identical diffuser geometry for both EOS.
+add_executable(
+    turbocompgpu_complete_stage_capacity_common_geometry
+    benchmarks/complete_stage_capacity_common_geometry.cpp
+)
+target_link_libraries(
+    turbocompgpu_complete_stage_capacity_common_geometry
+    PRIVATE turbocompgpu
+)
