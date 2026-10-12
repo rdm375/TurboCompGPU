@@ -1,0 +1,12 @@
+RPM=9000 combinations=9 interior=9 incomplete=0
+RPM=10500 combinations=18 interior=18 incomplete=0
+RPM=12000 combinations=27 interior=27 incomplete=0
+RPM=13500 combinations=36 interior=36 incomplete=0
+RPM=15000 combinations=45 interior=44 incomplete=0
+
+STAGE 7J.2 SUMMARY
+combinations=45
+interior_peaks=44
+incomplete=0
+maximum_relative_area_error=2.22045e-16
+output="benchmarks/results-constant-area-convergence"

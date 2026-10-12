@@ -1,0 +1,11 @@
+STAGE 7J.1 OUTLET WIDTH TRANSITION
+RPM=15000
+critical_flow=1.99348013863
+baseline_width=0.025
+blade_angle=42.781881823
+h=0.004 width_mm=26.4043357968 increase_pct=5.61734318733 slope=9.14823772291e-11 bracket=5.96046448309e-10 residual=1.60295410417e-14 iterations=21
+h=0.002 width_mm=26.4042893052 increase_pct=5.61715722084 slope=3.35287353437e-10 bracket=5.96046448309e-10 residual=1.61616648807e-14 iterations=21
+h=0.001 width_mm=26.4042773843 increase_pct=5.61710953712 slope=-6.55031584529e-11 bracket=5.96046448309e-10 residual=2.50387156054e-15 iterations=21
+h=0.0005 width_mm=26.404274404 increase_pct=5.6170976162 slope=-1.79189996175e-10 bracket=5.96046448309e-10 residual=9.11243940795e-15 iterations=21
+h=0.00025 width_mm=26.404273808 increase_pct=5.61709523201 slope=-5.77315972805e-12 bracket=5.9604644484e-10 residual=8.07646612106e-15 iterations=21
+output="benchmarks/results-geometry-width-transition"

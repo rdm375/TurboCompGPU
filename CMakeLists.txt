@@ -1140,3 +1140,58 @@ target_link_libraries(
     turbocompgpu_aerodynamic_transition_convergence
     PRIVATE turbocompgpu
 )
+
+# Stage 7J: Impeller outlet geometry sensitivity.
+add_executable(
+    turbocompgpu_geometry_sensitivity
+    benchmarks/geometry_sensitivity.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_geometry_sensitivity
+    PRIVATE turbocompgpu
+)
+
+# Stage 7J.1: Outlet-width capacity-boundary transition.
+add_executable(
+    turbocompgpu_geometry_width_transition
+    benchmarks/geometry_width_transition.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_geometry_width_transition
+    PRIVATE turbocompgpu
+)
+
+# Stage 7J.2: Constant-outlet-area geometry sensitivity.
+add_executable(
+    turbocompgpu_constant_area_sensitivity
+    benchmarks/constant_area_sensitivity.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_constant_area_sensitivity
+    PRIVATE turbocompgpu
+)
+
+# Stage 7J.3: Constant-area geometry boundary transition.
+add_executable(
+    turbocompgpu_constant_area_transition
+    benchmarks/constant_area_transition.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_constant_area_transition
+    PRIVATE turbocompgpu
+)
+
+# Stage 7J.3: Constant-area elasticity convergence.
+add_executable(
+    turbocompgpu_constant_area_convergence
+    benchmarks/constant_area_convergence.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_constant_area_convergence
+    PRIVATE turbocompgpu
+)
