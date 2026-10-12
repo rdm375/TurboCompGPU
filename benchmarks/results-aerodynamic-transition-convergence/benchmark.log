@@ -1,0 +1,10 @@
+RPM=9000 root_evaluations=48 sensitivity_evaluations=16
+RPM=10500 root_evaluations=84 sensitivity_evaluations=32
+RPM=12000 root_evaluations=104 sensitivity_evaluations=48
+RPM=13500 root_evaluations=132 sensitivity_evaluations=64
+RPM=15000 root_evaluations=168 sensitivity_evaluations=80
+
+STAGE 7I.3 SUMMARY
+root_evaluations=168
+sensitivity_evaluations=80
+output="benchmarks/results-aerodynamic-transition-convergence"

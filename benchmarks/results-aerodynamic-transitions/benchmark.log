@@ -1,0 +1,10 @@
+RPM=9000 families=12 crossings=12
+RPM=10500 families=24 crossings=21
+RPM=12000 families=36 crossings=26
+RPM=13500 families=48 crossings=33
+RPM=15000 families=60 crossings=42
+
+STAGE 7I.2 SUMMARY
+families=60
+crossings=42
+output="benchmarks/results-aerodynamic-transitions"

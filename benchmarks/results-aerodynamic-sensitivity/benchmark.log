@@ -1,0 +1,11 @@
+RPM=9000 completed=60 interior_peaks=43 incomplete=0
+RPM=10500 completed=120 interior_peaks=93 incomplete=0
+RPM=12000 completed=180 interior_peaks=147 incomplete=0
+RPM=13500 completed=240 interior_peaks=197 incomplete=0
+RPM=15000 completed=300 interior_peaks=238 incomplete=0
+
+STAGE 7I SUMMARY
+combinations=300
+interior_peaks=238
+incomplete=0
+output="benchmarks/results-aerodynamic-sensitivity"

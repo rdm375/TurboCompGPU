@@ -1096,3 +1096,47 @@ target_link_libraries(
     turbocompgpu_refined_characteristic
     PRIVATE turbocompgpu
 )
+
+# Stage 7H: Numerical convergence of compressor characteristic maxima.
+add_executable(
+    turbocompgpu_characteristic_convergence
+    benchmarks/characteristic_convergence.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_characteristic_convergence
+    PRIVATE turbocompgpu
+)
+
+# Stage 7I: Aerodynamic closure sensitivity.
+add_executable(
+    turbocompgpu_aerodynamic_sensitivity
+    benchmarks/aerodynamic_sensitivity.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_aerodynamic_sensitivity
+    PRIVATE turbocompgpu
+)
+
+# Stage 7I.2: Aerodynamic boundary transitions and peak sensitivities.
+add_executable(
+    turbocompgpu_aerodynamic_transitions
+    benchmarks/aerodynamic_transitions.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_aerodynamic_transitions
+    PRIVATE turbocompgpu
+)
+
+# Stage 7I.3: Transition-root and mixed-derivative convergence.
+add_executable(
+    turbocompgpu_aerodynamic_transition_convergence
+    benchmarks/aerodynamic_transition_convergence.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_aerodynamic_transition_convergence
+    PRIVATE turbocompgpu
+)

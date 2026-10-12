@@ -1,0 +1,11 @@
+RPM=9000 refined_peak=0.51715545767 peak_ratio=1.15434681318 bracket=6.34421482015e-09 residual=7.20762931334e-15
+RPM=10500 refined_peak=0.817166005068 peak_ratio=1.22948085282 bracket=6.34421482015e-09 residual=2.95215737653e-15
+RPM=12000 refined_peak=1.14049494233 peak_ratio=1.32049845003 bracket=6.34421470913e-09 residual=2.10114623989e-15
+RPM=13500 refined_peak=1.49402686758 peak_ratio=1.42946044461 bracket=6.34421470913e-09 residual=9.45509074325e-15
+RPM=15000 refined_peak=1.88425735963 peak_ratio=1.55881568456 bracket=6.34421470913e-09 residual=2.46881132771e-15
+
+STAGE 7H SUMMARY
+speeds=5
+optimizer_tolerances=5
+derivative_steps=9
+output="benchmarks/results-characteristic-convergence"
