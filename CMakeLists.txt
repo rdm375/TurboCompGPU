@@ -1304,3 +1304,36 @@ if(BUILD_TESTING)
         COMMAND turbocompgpu_vaneless_diffuser_branches_test
     )
 endif()
+
+# Stage 8B.5b.1: fixed-geometry complete-stage characteristic.
+add_executable(
+    turbocompgpu_complete_stage_characteristic
+    benchmarks/complete_stage_characteristic.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_complete_stage_characteristic
+    PRIVATE turbocompgpu
+)
+
+# Stage 8B.5b.2: coupled operating-envelope boundaries.
+add_executable(
+    turbocompgpu_complete_stage_boundaries
+    benchmarks/complete_stage_boundaries.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_complete_stage_boundaries
+    PRIVATE turbocompgpu
+)
+
+# Stage 8B.5b.3: extended coupled diffuser capacity envelope.
+add_executable(
+    turbocompgpu_complete_stage_capacity_extended
+    benchmarks/complete_stage_capacity_extended.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_complete_stage_capacity_extended
+    PRIVATE turbocompgpu
+)
