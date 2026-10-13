@@ -1448,3 +1448,19 @@ add_test(
     NAME vaneless_diffuser_friction_verification
     COMMAND turbocompgpu_vaneless_diffuser_friction_verification
 )
+
+# Stage 8C.1d: analytical thermodynamic derivatives.
+add_executable(
+    turbocompgpu_vaneless_diffuser_friction_analytical
+    tests/vaneless_diffuser_friction_analytical.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_vaneless_diffuser_friction_analytical
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME vaneless_diffuser_friction_analytical
+    COMMAND turbocompgpu_vaneless_diffuser_friction_analytical
+)
