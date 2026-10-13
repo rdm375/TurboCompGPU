@@ -1,0 +1,1185 @@
+NASA/TM-20240003692/REV1
+
+
+
+
+User’s Guide for the NASA High Eﬃciency
+Centrifugal Compressor Data Archive
+Herbert Monroe Harrison III
+Glenn Research Center, Cleveland, Ohio
+
+
+
+
+This Revised Copy, numbered as NASA/TM-20240003692/REV1, December 2024, supersedes the
+previous version, NASA/TM-20240003692, May 2024, in its entirety.
+
+
+
+
+December 2024
+                                            NASA STI Program . . . in Profile
+
+
+
+Since its founding, NASA has been dedicated to the                  minimal annotation. Does not contain extensive
+advancement of aeronautics and space science. The                   analysis.
+NASA scientific and technical information (STI)
+program plays a key part in helping NASA maintain               •   CONTRACTOR REPORT.
+this important role.                                                Scientific and technical findings by NASA-
+                                                                    sponsored contractors and grantees.
+The NASA STI program operates under the auspices of
+the Agency Chief Information Oﬃcer. It collects, orga-          •   CONFERENCE PUBLICATION.
+nizes, provides for archiving, and disseminates NASA’s              Collected papers from scientific and technical
+STI. The NASA STI program provides access                           conferences, symposia, seminars, or other meetings
+to the NTRS Registered and its public interface, the                sponsored or cosponsored by NASA.
+NASA Technical Reports Server, thus providing one
+of the largest collections of aeronautical and space            •   SPECIAL PUBLICATION.
+science STI in the world. Results are published in both             Scientific, technical, or historical information from
+non-NASA channels and by NASA in the NASA STI                       NASA programs, projects, and missions, often
+Report Series, which includes the following report types:           concerned with subjects having substantial public
+                                                                    interest.
+•   TECHNICAL PUBLICATION.
+                                                                •   TECHNICAL TRANSLATION.
+    Reports of completed research or a major
+                                                                    English-language translations of foreign scientific
+    significant phase of research that present the
+                                                                    and technical material pertinent to NASA’s
+    results of NASA programs and include extensive
+                                                                    mission.
+    data or theoretical analysis. Includes compilations
+    of significant scientific and technical data and
+                                                                Specialized services also include organizing and
+    information deemed to be of continuing reference
+                                                                publishing research results, distributing specialized
+    value. NASA counterpart of peer-reviewed formal
+                                                                research announcements and feeds, providing informa-
+    professional papers but has less stringent limitations
+                                                                tion desk and personal search support, and
+    on manuscript length and extent of graphic
+                                                                enabling data exchange services.
+    presentations.
+                                                                For more information about the NASA STI program,
+•   TECHNICAL MEMORANDUM.                                       see the following:
+    Scientific and technical findings that are preliminary
+    or of specialized interest, e.g., quick release reports,    •   Access the NASA STI program home page at
+    working papers, and bibliographies that contain                 http://www.sti.nasa.gov
+NASA/TM-20240003692/REV1
+
+
+
+
+User’s Guide for the NASA High Eﬃciency
+Centrifugal Compressor Data Archive
+Herbert Monroe Harrison III
+Glenn Research Center, Cleveland, Ohio
+
+
+
+
+This Revised Copy, numbered as NASA/TM-20240003692/REV1, December 2024, supersedes the
+previous version, NASA/TM-20240003692, May 2024, in its entirety.
+
+
+
+
+National Aeronautics and
+Space Administration
+
+
+Glenn Research Center
+Cleveland, Ohio 44135
+
+
+
+
+December 2024
+                                                     Acknowledgments
+
+
+
+
+Please contact Trey Harrison by email at herbert.harrison@nasa.gov for inquiries related to the dataset and documentation or to
+be added to an email list to be notified of updates and additions to the archive. Any revisions or corrections made to the archive
+will be documented in the revision history.
+
+This eﬀort is sponsored by the Transformational Tools and Technologies project of the NASA Transformative Aeronautics
+Concepts Program and the Revolutionary Vertical Lift Technology Project of the NASA Advanced Air Vehicles Program. The
+HECC Data Archive has grown to include contributions from numerous government, industry, and academic organizations, and
+the author is grateful to all of the individuals who have supported the eﬀorts along the way.
+
+Major contributors to the archive are Tammy Nguyen-Huynh of both the NASA Glenn Research Center and the Ohio State
+University and Qingyuan Zhuang at Siemens. Tammy’s work with the HECC impeller solid model led to the discovery of the
+geometry diﬀerences between the As-Manufactured and Design-Intent geometries. Qingyuan Zhuang conducted the cold-to-hot
+analysis of the As-Manufactured impeller and generously shared the Hot As-Manufactured impeller coordinates with NASA for
+hosting on the Data Archive and use by the community.
+
+RTX Technologies Research Center conducted the design work on the HECC from its inception and released the vaneless
+diﬀuser set for use by the community. Alex Camargo, Jacob Jaksic, Matthew Blaha, Jonathan Mitchell, Carolyn Thiemann, and
+Jozsef Puskas have spent innumerable hours acquiring data on the HECC at the Small Engine Components Compressor Test
+Facility at the NASA Glenn Research Center. David Na helped find the appropriate tools to set up the publicly accessible
+Data Archive.
+                                                         Revised Copy
+
+This Revised Copy, numbered as NASA/TM-20240003692/REV1, December 2024, supersedes the previous version,
+NASA/TM-20240003692, May 2024, in its entirety.
+
+
+
+
+                                               This work was sponsored by the
+                                        Transformative Aeronautics Concepts Program.
+
+
+
+
+                              Trade names and trademarks are used in this report for identification
+                                 only. Their usage does not constitute an oﬃcial endorsement,
+                                 either expressed or implied, by the National Aeronautics and
+                                                    Space Administration.
+
+
+
+
+                   Level of Review: This material has been technically reviewed by technical management.
+
+
+
+
+                 This report is available in electronic form at http://www.sti.nasa.gov/ and http://ntrs.nasa.gov/
+             User’s Guide for the Nasa High Efficiency Centrifugal
+                         Compressor Data Archive
+                                                     Herbert Monroe Harrison III
+                                           National Aeronautics and Space Administration
+                                                      Glenn Research Center
+                                                       Cleveland, Ohio 44135
+
+SUMMARY
+    The data sets contained in this archive are associated with the High Efficiency Centrifugal Compressor
+(HECC) in the Small Engine Components Compressor Test Facility, colloquially referred to as CE-18, at the
+NASA Glenn Research Center. The archive is accessible at https://storage.googleapis.com/hecc-
+data/NASA-HECC-Data-Archive.zip. The documentation contained herein provides context for the data
+hosted on the archive. The data sets and accompanying content in this document will be updated
+periodically as additional data is acquired and analyzed. The revision date of this document is indicated in
+the footer, and the revision updates are noted in the Revision History. Contact Trey Harrison
+(herbert.harrison@nasa.gov) for inquiries related to the data set and documentation or to be added to an
+email list to be notified of updates and additions to the archive.
+
+
+CONTENTS
+  Summary ................................................................................................................................................ 1
+  Contents ................................................................................................................................................. 1
+  1.     Revision History............................................................................................................................. 3
+  2.     Nomenclature ............................................................................................................................... 3
+     2.1 Acronyms ...................................................................................................................................... 3
+  3.     Introduction .................................................................................................................................. 4
+  4.     General notes ................................................................................................................................ 6
+     4.1 Convention.................................................................................................................................... 6
+     4.2 Nomenclature and Instrumentation Overview ............................................................................ 6
+     4.3 Bleed Flows and Metal Temperatures .......................................................................................... 7
+     4.4 Gas Properties .............................................................................................................................. 8
+     4.5 Tip Clearance ................................................................................................................................ 9
+     4.6 Design-Intent and As-Manufactured Geometry Differences ........................................................ 9
+  5.     Key Parameters ........................................................................................................................... 10
+     5.1 Geometric Parameters ................................................................................................................ 10
+     5.2 Design Point Aerodynamic Conditions ....................................................................................... 10
+  6.     HECC Vaned Diffuser Data Set ..................................................................................................... 11
+     6.1 HECC Vaned Stage Component Coordinates .............................................................................. 11
+        6.1.1 HECC Design-Intent Stage Coordinates (Hot, No Fillets) ..................................................... 11
+        6.1.2 HECC As-Manufactured Impeller Coordinates (Cold, With Fillets) ...................................... 11
+        6.1.3 HECC As-Manufactured Impeller Coordinates (Hot, With Fillets) ....................................... 11
+     6.2 Data............................................................................................................................................. 12
+        6.2.1 Tip Clearance ....................................................................................................................... 12
+        6.2.2 Experimental Data ............................................................................................................... 13
+     6.3 Data – Stage Inlet Surveys .......................................................................................................... 13
+     6.4 Models ........................................................................................................................................ 15
+  7.     HECC Vaneless Diffuser Data Set ................................................................................................. 15
+     7.1 Coordinates................................................................................................................................. 15
+NASA/TM-20240003692/REV1                                                                  1                   Revision Date: December 23, 2024
+      7.2 Data – Baseline Metal Inlet......................................................................................................... 15
+         7.2.1 Tip Clearance ....................................................................................................................... 16
+         7.2.2 Experimental Data ............................................................................................................... 16
+      7.3 Data – Transition Duct Inlet ........................................................................................................ 16
+         7.3.1 Tip Clearance ....................................................................................................................... 18
+         7.3.2 Baseline Experimental Data Sets ......................................................................................... 18
+      7.4 Data – Tip Clearance ................................................................................................................... 19
+      7.5 Data – Impeller Exit Surveys ....................................................................................................... 20
+      7.6 Models ........................................................................................................................................ 21
+   8.     References ................................................................................................................................... 21
+
+
+
+
+NASA/TM-20240003692/REV1                                                               2                    Revision Date: December 23, 2024
+1. REVISION HISTORY                                                       • Document rearranged for clarity;
+                                                                            section names updated
+             Initial publication of archive with HECC                     • Added As-Manufactured Impeller Hot
+  March      vaned diffuser, vaneless diffuser, and                         Geometry Coordinates to the HECC As-
+  2023       transition duct data at design tip                             Manufactured Impeller Coordinates
+             clearance.                                                     (Hot, With Fillets) directory;
+             • Included notes about geometry                                documentation in Section 6.1.3 HECC
+               discrepancies between models and                             As-Manufactured Impeller Coordinates
+                                                                 December
+               blade sections (Section 4.)                                  (Hot, With Fillets)
+  August                                                           2024
+             • Provided HECC impeller cold blade                          • Added Section 4.2 Nomenclature and
+   2023
+               sections (Section 6.1.2 )                                    Instrumentation Overview
+             • Added HECC vaneless diffuser solid                         • Updated Section 4.3 Bleed Flows and
+               model (Section 7.6 Models)                                   Metal Temperatures to document metal
+             • Section 4.6 Design-Intent and As-                            temperatures
+               Manufactured Geometry Differences                          • Aerodynamic design point conditions
+               updated                                                      compiled in Section 5.2 Design Point
+             • Added tip clearance data to the archive                      Aerodynamic Conditions
+ February      and Read-Me
+   2024      • Section 7.3 Data – Transition Duct Inlet         2. NOMENCLATURE
+               updated to include relevant impeller                    𝑏𝑏 blade height
+               exit survey metadata                                  𝑐𝑐𝑝𝑝 specific heat at constant pressure
+             • Publications added to HECC Data                        𝐷𝐷 diameter
+               Archive                                                𝑚𝑚̇ mass flow rate
+             • Updates throughout the archive to                     𝑁𝑁𝑐𝑐 corrected speed
+               clarify geometry, in particular to Section              𝑟𝑟 radius
+               4.6 Design-Intent and As-Manufactured                   𝑇𝑇 temperature
+               Geometry Differences                                   𝑈𝑈 wheel speed
+ July 2024   • Geometry nomenclature updated for                       𝜌𝜌 density
+               clarity                                                Φ inlet flow coefficient
+             • Added inlet survey data (Section 6.3                   𝜓𝜓 Loading coefficient
+               Data – Stage Inlet Surveys)
+             • Added Turbo Expo 2024 publications                  2.1 Acronyms
+             • The tip blade sections for the both the               BLM baseline metal (inlet)
+               impeller main blade and splitter blade                 BLP baseline plastic (inlet)
+               were identified as missing from the                   CAD computer aided design
+  October
+               archive. The missing sections have been                CFD computational fluid dynamics
+   2024A
+               added to the HECC As-Manufactured                     EGV exit guide vane
+               Impeller Coordinates (Cold, With                       FLA forward looking aft
+               Fillets) directory.                                  HECC High Efficiency Centrifugal Compressor
+             • Updates made to the humidity                           MB main blade
+               correction procedures for the HECC                     MH modified hub (inlet)
+               Vaned Diffuser Data Set (Section 6);                   TPR total pressure ratio
+  October      information regarding the updates are                  TDC top dead center
+   2024B       in Section 4.4 Gas Properties
+             • Geometric parameters compiled for
+               reference in Section 5.1 Geometric
+               Parameters
+
+
+NASA/TM-20240003692/REV1                                    3                           Revision Date: December 23, 2024
+3. INTRODUCTION                                                     available for the HECC. The originally developed vaned
+    The High Efficiency Centrifugal Compressor (HECC)               diffuser featured aggressive design targets intended to
+was developed with the following goals according to                 advance state-of-the-art compressor technology; the
+Medic et al. [1]:                                                   follow-up vaneless diffuser test was developed to better
+    • Identify key technical barriers in the advancement            understand the impeller performance in isolation from
+       of state-of-the-art of small centrifugal compressor          the vaned diffuser. The three inlet configurations are the
+       stages.                                                      (1) baseline metal inlet, (2) baseline plastic inlet, and (3)
+    • Delineate measurements required to provide                    modified-hub plastic inlet. The baseline metal and
+       insight into the flow physics of the technical               baseline plastic inlets have exactly the same geometry, but
+       barriers.                                                    as suggested by their names, are manufactured from
+    • Design, fabricate, install, and test a state-of-the-art       metal and plastic, respectively. The modified-hub inlet
+       research compressor that is representative of the            features the same shroud contour as the baseline inlets,
+       rear stage of an axial-centrifugal aero-engine.              but the hub curvature is more aggressive. The modified-
+    • Acquire detailed aerodynamic data to clarify flow             hub inlet was developed to understand the effect of an
+       physics and establish extensive data sets for future         aggressive S-duct configuration on centrifugal compressor
+       application.                                                 performance.
+    As of the present revision, two different diffuser
+configurations and three different inlet configurations are
+
+
+
+
+FIGURE 1: MAJOR FLOWPATH COMPONENTS OF THE NASA SMALL ENGINE COMPONENTS COMPRESSOR TEST
+FACILITY.
+
+
+
+NASA/TM-20240003692/REV1                                        4                              Revision Date: December 23, 2024
+FIGURE 2: MAJOR COMPONENTS OF THE NASA SMALL ENGINE COMPONENTS COMPRESSOR TEST FACILITY
+(CE-18).
+     The HECC test article has been housed in the NASA              Harrison et al. documents the present state of the Small
+Small Engine Components Compressor Test Facility since              Engine Components Compressor Test Facility and vaneless
+the test article’s inception. The details of the facility are       diffuser performance with all three inlet configurations
+documented in detail by Brokopp and Gronski [2] and                 [3]. Robles Vega et al. [5], Robles Vega et al. [6], and
+Harrison et al. [3]. A photograph of the facility and               Harrison et al. [7] review the Design-Intent and As-
+accompanying schematic are provided for reference in                Manufactured impeller geometries in detail and
+Figure 1 and Figure 2, respectively. Figure 3 shows the             extensively investigate the effect of the size of the tip gap
+HECC with the extensive instrumentation and auxiliary               on the impeller performance and flow physics. All
+systems connected and in test-ready condition.                      publications relevant to the HECC published with NASA
+     Extensive documentation of the HECC vaned diffuser             affiliation are included in the Publications directory.
+stage design and performance can be found in the report                  In the interest of brevity, the details of each of those
+published by Medic et al. [1]. Braunscheidel et al. [4] give        reports are not contained herein. Instead, this document
+a briefer review of the vaned diffuser configuration with           serves as a tool for navigation and utilization of the open
+less emphasis on the design process but include additional          experimental data associated with the HECC test article.
+aerodynamic data. A facility report published in 2023 by            The following sections outline the conventions,
+
+
+
+NASA/TM-20240003692/REV1                                        5                              Revision Date: December 23, 2024
+FIGURE 3: HECC TEST ARTICLE WITH ALL                                 FIGURE 4: HECC VANED AND VANELESS DIFFUSER
+INSTRUMENTATION AND AUXILIARY SYSTEMS                                NOMENCLATURE
+CONNECTED.
+instrumentation, notable observations during the
+experiments, stage geometry, and the structure of the
+directories in the data set, as well as necessary details for
+utilization of the data, such as column header
+descriptions.
+
+4. GENERAL NOTES
+     4.1 Convention
+     The coordinate system for the HECC data set is
+cylindrical with the impeller axis of rotation serving as the
+axis of rotation. Per the convention in the report
+published by Medic et al. [1], the axial coordinate is 0 at
+the impeller leading edge and increasing in the forward-
+looking-aft (FLA) direction. Unless otherwise specified,
+the length units are in inches. The azimuthal direction is           FIGURE 5: HECC VANED                 DIFFUSER       STAGE
+oriented such that top dead center (TDC) is equivalent to            INSTRUMENTATION OUTLINE.
+0° and positive counterclockwise is oriented from the FLA           configurations. The total temperature and total pressure
+direction, which corresponds to the direction of the                measurements at Station 0, considered the stage inlet, are
+impeller rotation.                                                  located upstream of the illustrated meridional cross
+    4.2 Nomenclature and Instrumentation                            sections; specifically, they are located in the inlet plenum
+    Overview                                                        called out in Figure 1 and Figure 2. Station 0, Station 4 (the
+    To give context for the details of the instrumentation          diffuser vane leading edge) and Station 7 (the stage exit),
+presented in later sections, meridional illustrations of the        are the primary locations for characterization of the stage
+HECC vaned and vaneless diffuser stages are provided for            and component performance with total pressure and total
+documentation of the stage nomenclature (Figure 4) and              temperature rakes.
+instrumentation (Figure 5). The station nomenclature is                  All instrumentation channel names begin with letters
+consistent between the vaned and vaneless diffuser                  that give some context for the measurement, Table 1. The
+stages for ease of comparison between the                           few one-off exceptions to the convention documented in
+
+
+
+NASA/TM-20240003692/REV1                                        6                               Revision Date: December 23, 2024
+TABLE 1. INSTRUMENTATION CHANNEL                                 nomenclature in Figure 4, i.e., P70XX is a total pressure
+CONVENTION: MEASUREMENT TYPE                                     measured at the stage exit.
+                                                                      It should be noted that there are sometimes slight
+       Letter Series                   Description               differences between the defined measurement location of
+             P                          Pressure                 static pressure taps in the metadata files and the hub or
+                               Total pressure measured           shroud boundary defined by the computational
+            PEV
+                               via an instrumented EGV           coordinates in the archive. These deviations are known,
+                              in the axial deswirl; at the       and most noticeable when comparing the hub and shroud
+                                   EGV leading edge              boundaries of the inlet and vaneless diffuser with the
+                               Total pressure measured           static pressure taps within those components. In the inlet,
+            PMV
+                                  via an instrumented            the cause of the difference has not been fully determined,
+                              diffuser vane; at the vane         but the issue is under investigation. In the vaneless
+                                      leading edge               diffuser, the static tap locations were acquired from
+            PO                   Orifice plate pressure          fabrication drawings at the cold conditions, so the
+             T                     Total temperature             difference there is attributed to the cold-to-hot
+            TC                        Tip clearance              deformation, given that the vaneless diffuser boundaries
+            TM                    Metal temperature              are defined at hot conditions.
+            TO                Orifice plate temperature
+                                                                      4.3 Bleed Flows and Metal Temperatures
+TABLE 2. INSTRUMENTATION CHANNEL                                      The locations of the external casing metal
+CONVENTION: MEASUREMENT GROUP                                    temperatures (TMEXxx) are shown on the test article in
+   Group                         Description                     the photographs in Figure 6. TMEX01 is the furthest
+     00          Inlet plenum stagnation measurements            upstream on the inlet (visible in Figure 6(a)), and TMEX02
+     11                 Inlet shroud statics, group 1            through TMEX05 are distributed from just downstream of
+     12                 Inlet shroud statics, group 2            the impeller knee through the trailing edge of the diffuser
+     13                   Inlet hub statics, group 1             (Figure 6(b)). TMEX06 (not shown in the photographs in
+     14                                                          Figure 6) is located on the exterior of the exhaust collector
+                          Inlet hub statics, group 2
+     21                                                          (Figure 7). In addition to showing the external metal
+                     Impeller shroud statics, group 1
+     22                                                          temperatures (TMEXxx series) in pink, Figure 7 presents
+                     Impeller shroud statics, group 2
+     24
+                                                                 the diffuser surface metal temperatures (TM42XX series)
+                       Impeller trailing edge statics
+     26
+                                                                 and EGV surface metal temperature (TMEV1) in yellow and
+                    Impeller backplate statics, group 1          the backplate metal temperatures (TM2XXX series) in
+     27             Impeller backplate statics, group 2          turquoise. Finally, the backface bleed flow path is visible
+     31                Vaneless space shroud statics             from the impeller trailing edge, between the impeller
+     32                    Diffuser shroud statics               backface and the backplate assembly, and across the
+     35                  Vaneless space hub statics              labyrinth seal.
+     36                      Diffuser hub statics                     The mass flow rate through the backface bleed flow
+     61                      Bend shroud statics                 path is not measured directly. However, the differential
+     62                        Bend hub statics                  pressure across the labyrinth seal at the impeller backface
+     63                       EGV shroud statics                 is recorded at all times. This value is documented in the
+     64                        EGV hub statics                   parameter CLSDP. A positive value of CLSDP indicates flow
+   70, 71          Stage exit stagnation measurements            out from the main flow path exiting across the labyrinth
+                                                                 seal. Typically, CLSDP is maintained at a value of
+Table 1 are provided in the relevant metadata files              approximately 0.5 psid. In some cases, the value is set to
+outlined in the following sections. The first two numeric        0.0 psid with the goal of reducing the assumptions in
+characters following the letters generally indicate the          numerical simulations, which do not account for bleed
+measurement group, Table 2. Stagnation conditions are            flow.
+measured exactly at the callout for the stage
+
+
+
+NASA/TM-20240003692/REV1                                     7                              Revision Date: December 23, 2024
+FIGURE 7: HECC CASING EXTERNAL METAL
+TEMPERATURES.
+                                                                  FIGURE 6: EFFECT OF HUMIDITY ON STAGE TOTAL
+                                                                  TEMPERATURE RISE AT 100 PERCENT CORRECTED
+                                                                  SPEED.
+
+
+
+
+ FIGURE 8: METAL TEMPERATURES AND BACKFACE
+ BLEED FLOW PATH IN THE HECC TEST ARTICLE.
+                                                                 FIGURE 9: HECC VANED DIFFUSER DATA SET AT
+    4.4 Gas Properties                                           100 PERCENT CORRECTED SPEED WITH TIGHT
+    Real gas properties with accounting for humidity were        TOLERANCE IN CORRECTED SPEED PRESCRIBED.
+used for calculation of any given performance metrics or         the mass fraction of water in the atmospheric air at the
+corrected parameters. The calculations were conducted in         time of each recording in the data set. The effect of the
+REFPROP [8] according to the procedures given by                 water content in the air is presented in Figure 8. Although
+Berdanier et al. [9] and Lou et al. [10].                        the intent was for all the data in Figure 11 to be acquired
+    In Fall 2024, ambiguities were identified in the             at 100 percent corrected speed, inconsistencies in
+measurement of water content via relative humidity for           correcting for humidity resulted in an undershoot of up to
+the HECC Vaned Diffuser Data Set (Section 6), which              0.3 percent and undesirable variation in the data collected
+resulted in undesirable variations in corrected speed for        along the speedline.
+data along a constant speed characteristic. To improve the           As of the October 2024B Revision, the corrected
+quality of the published data set, weather data from the         conditions for the data set have been updated to use the
+Cleveland Hopkins Airport, which is located adjacent to          airport data, which primarily impacts the corrected speed
+the NASA Glenn Research Center, was used to determine            calculations due to changes in the molar composition of
+
+
+NASA/TM-20240003692/REV1                                     8                             Revision Date: December 23, 2024
+the air as a function of humidity. Corrected mass flow rate
+and efficiency calculations are also impacted, though to a
+lesser degree because they are also dependent upon the
+corrected speed of the machine. Using a tighter tolerance
+band of acceptable variation in corrected speed, the
+scatter in the data set has been reduced (Figure 9).
+    Ultimately, for users of the HECC Data Archive, the
+performance metrics of the stage are unchanged, but the
+variation in performance along a speedline has been
+reduced.
+    4.5 Tip Clearance
+    The impeller tip clearance is measured with
+capacitance probes at three locations in the HECC: inlet,
+knee, and exducer (Figure 10). At each meridional
+location, there is a single tip clearance probe, and the
+runtime value of tip clearance is set based on the single           FIGURE 10: FLA ILLUSTRATION OF TIP CLEARANCE
+tip clearance value at the exducer. However, rub probes             INSTRUMENTATION AND TIP GAP ECCENTRICITY IN
+                                                                    THOUSANDTHS OF AN INCH AS MEASURED BY RUB
+are used to calibrate the tip clearance probes as well as to        PROBES AT 100 PERCENT CORRECTED SPEED
+evaluate the eccentricity of the impeller clearance. Typical        DURING THE HECC TRANSITION DUCT TEST
+values of the eccentricity of the rub probes at 100 percent         CAMPAIGN.
+corrected speed are given in Figure 10. The measured
+                                                                            Geometry) is accurately represented at cold,
+value of tip clearance at the exit (TCEX1) is set to
+                                                                            unloaded conditions by the solid models
+compensate for the eccentricity. As such, refer to the
+                                                                            contained in the HECC Data Archive.
+channel TCEXSET for the “set” value of the tip clearance.
+                                                                        3) Numerical simulations show that the Design-
+The difference between TCEX1 and TCEXSET for each data
+                                                                            Intent Geometry achieves improved performance
+set will be documented throughout the relevant sections
+                                                                            relative to the As-Manufactured Geometry.
+of this document. Further details on the tip clearance
+                                                                        Users of the Data Archive are strongly encouraged to,
+measurements are provided in Reference [7].
+                                                                   at minimum, read the Abstract and Conclusions sections
+    4.6 Design-Intent and As-Manufactured                          by Robles Vega et al.
+    Geometry Differences                                                Guidelines for use of the HECC geometry are as
+    Detailed investigations presented by Robles Vega et al.        follows:
+[6] have identified significant differences between the                 1) The Design-Intent Geometry was used for the
+intended design blade sections of the HECC impeller                         pretest performance predictions of HECC. It is the
+(provided in the HECC Vaned Diffuser Report [1]) and the                    intended shape of the impeller at hot, loaded
+actual, manufactured impeller geometry. A summary of                        conditions.
+the findings is as follows:                                             2) The As-Manufactured Geometry is the actual,
+    1) The physical, manufactured HECC impeller is                          fabricated impeller geometry that has been
+        different from the intended design geometry                         experimentally tested. All experimental results
+        (referred to hereafter as the “Design-Intent                        are for the As-Manufactured Geometry.
+        Geometry”) presented by Medic et al. [1] with                   3) The impeller solid model contained in the data
+        significant differences in the splitter leading edge                archive is an accurate representation of the As-
+        metal angle, impeller exit radius, and blade                        Manufactured Impeller at cold, unloaded
+        thickness. These differences are too great to be                    conditions.
+        attributed to errors in the hot-to-cold                         The discrepancies between the Design-Intent and As-
+        transformation process.                                    Manufactured geometries appear to be isolated to the
+    2) The physical, manufactured HECC impeller                    impeller. If further discrepancies are observed, please
+        (referred to hereafter as the “As-Manufactured
+
+
+NASA/TM-20240003692/REV1                                       9                             Revision Date: December 23, 2024
+TABLE 3. KEY HECC IMPELLER DESIGN-INTENT                          TABLE 4. KEY HECC VANED DIFFUSER GEOMETRIC
+AND AS-MANUFACTURED GEOMETRIC                                     PARAMETERS.
+PARAMETERS. VALUES MARKED BY ASTERISKS
+WERE LIMITED TO APPROXIMATION BY CAD TOOLS                                   Parameter                 Value         Unit
+DUE TO THE COMPLEX CURVATURE OF THE                                 MB Setting Angle from Radial         80          deg
+IMPELLER GEOMETRY.                                                          Inlet Radius               9.108          in.
+                    Design-        As-                                       Exit Radius               11.199         in.
+   Parameter                                      Unit
+                    Intent     Manufactured                                  Span at LE                0.559          in.
+                                                                    Blade Number (Main/Splitter)       20/20          —
+  LE Hub Radius      1.595          1.592          in.
+                                                                  TABLE  5.   KEY           HECC      EGV        GEOMETRIC
+                                                                  PARAMETERS.
+  LE Tip Radius      4.240          4.238          in.
+                                                                               Parameter                Value        Unit
+ Splitter LE Hub
+                     2.658          2.630          in.                     Inlet Hub Radius            11.8315        in.
+      Radius
+                                                                         Inlet Shroud Radius            12.297        in.
+  Splitter LE Tip
+                     4.737          4.737          in.                      Exit Hub Radius             11.868        in.
+      Radius
+                                                                          Exit Shroud Radius            12.305        in.
+ Hub TE Radius       8.494          8.480          in.                        Axial Chord               2.438         in.
+                                                                            Blade Number                  60          —
+    Shroud TE
+                     8.499          8.482          in.
+     Radius                                                       TABLE 6. KEY HECC VANELESS                      DIFFUSER
+                                                                  GEOMETRIC PARAMETERS.
+  Average Exit
+                     8.497          8.481          in.
+    Radius                                                                      Parameter                   Value      Unit
+    Exit Blade                                                      Impeller Exit Rating Plane – Radius     9.108       in.
+                     0.609          0.600          in.
+     Height                                                          Impeller Exit Rating Plane – Span      0.481       in.
+                                                                         Stage Exit – Hub Radius            11.869      in.
+  Tip Clearance      0.012          0.012          in.
+                                                                       Stage Exit – Shroud Radius           12.182      in.
+ Blade Number                                                                Stage Exit – Span              0.313       in.
+                     15/15          15/15          —
+ (Main/Splitter)
+
+   Backsweep           30            30           deg             impeller parameters are given in Table 3. The Design-
+                                                                  Intent parameters are taken directly from Medic et al. [1];
+  LE Lean Angle        -2            -2*          deg             the As-Manufactured parameters were extracted from a
+                                                                  three-dimensional scan of the HECC impeller. The major
+                                                                  parameters for the vaned diffuser and EGV are given in
+  TE Lean Angle       -29           -29*          deg
+                                                                  Table 4 and Table 5, respectively. Finally, the vaneless
+                                                                  diffuser parameters at the impeller exit rating station and
+                                                                  stage exit are given in Table 6.
+contact Trey Harrison at herbert.harrison@nasa.gov to
+notify NASA of the issue.                                             5.2 Design Point Aerodynamic Conditions
+                                                                      At standard day conditions, defined as 59 °F, 14.7 psia,
+5. KEY PARAMETERS                                                 and 0 percent relative humidity, the design speed of the
+                                                                  HECC impeller is 21,789 rpm with an exit tip clearance of
+    5.1 Geometric Parameters                                      0.012 in. Medic et al. [1] specify the design point for the
+    Major parameters of interest, such as blade numbers,          vaned diffuser stage in terms of exit corrected mass flow
+leading edge tip radius, and blade heights are compiled in        rate as 3 lbm/s. At design speed, an exit corrected mass
+this section. The Design-Intent and As-Manufactured               flow rate of 3 lbm/s corresponds to an inlet corrected
+
+
+NASA/TM-20240003692/REV1                                     10                              Revision Date: December 23, 2024
+mass flow rate of 10.85 lbm/s, at which the stage delivers           in the actual hardware on the impeller blades, diffuser
+a total pressure ratio of 4.68 at an isentropic efficiency of        vanes, and EGVs. The fillets on the hardware can be
+82.1 percent. For the vaneless diffuser stage, the design            viewed in the solid model discussed in Section 6.4 Models.
+inlet mass flow rate is considered to be the peak efficiency         The coordinates account for the expected deformation of
+point on the 100 percent characteristic. Peak efficiency for         the components associated with the temperatures and
+the vaneless diffuser stage was measured at an inlet mass            loadings of the stage at design conditions.
+flow rate of 11 lbm/s and total pressure ratio 4.55. The                  Except for the flow path hub and shroud files, the
+measured isentropic efficiency of the vaneless stage was             coordinates are space delimited with three columns. A
+83.8 percent with the baseline metal inlet and 82.6                  single line header defines the columns: X, R*THETA, and
+percent with the baseline plastic inlet, which implies a             R, which correspond to the axial, radius*angle, and radial
+notable effect from heat transfer. See Reference [3] for             directions. Specifically, the R*THETA column is the radial
+information regarding the effect of the inlet on the stage           coordinate multiplied by the azimuthal coordinate in
+performance.                                                         radians. The blade sections are specified in single
+    Given that the vaneless diffuser stage design point is           complete loops for each file, with the lowest increment in
+at peak efficiency for the vaneless diffuser as well as the          the filename corresponding to the hub location and
+impeller [3,7], it is the opinion of the author that an inlet        increasing increment moving towards the shroud.
+corrected mass flow rate of 11 lbm/s is a reasonable                      The flow path hub and shroud files contain only two
+operating condition for analysis of the HECC impeller,               columns and are tab delimited. The column headers x and
+vaned diffuser, and vaneless diffuser components.                    r are the axial and radial coordinates, respectively, given
+                                                                     in inches and radians.
+6. HECC VANED DIFFUSER DATA SET                                          6.1.2 HECC As-Manufactured Impeller Coordinates
+     The HECC Vaned Configuration directory contains the
+                                                                     (Cold, With Fillets)
+Coordinates, Data, and Models subdirectories, which
+                                                                         The HECC As-Manufactured Impeller Coordinates
+contain blade section information, experimental data,
+                                                                     (Cold, With Fillets) directory contains the Cold As-
+and solid models, respectively, associated with the HECC
+                                                                     Manufactured impeller blade section data directly
+vaned diffuser configuration. The convention for the data
+                                                                     extracted from the impeller solid model contained in the
+set is given in Section 4.1 Convention.
+                                                                     Data Archive. These blade sections are at cold, unloaded
+    6.1  HECC          Vaned       Stage      Component              conditions and are derived from the solid model that was
+    Coordinates                                                      used for fabrication of the stage. As such, the Cold, As-
+   6.1.1 HECC Design-Intent Stage Coordinates (Hot,                  Manufactured coordinates do not account for the
+No Fillets)                                                          deformation of the impeller that occurs at high speeds
+     The HECC Design-Intent Stage Coordinates (Hot, No               and loadings. The impeller blade sections are given in the
+Fillets) directory contains the Design-Intent hub, shroud,           same convention as specified in Section 6.1.1 HECC
+impeller main blade, impeller splitter blade, diffuser main          Design-Intent Stage Coordinates (Hot, No Fillets).
+vane, diffuser splitter vane, and exit guide vane (EGV)                 6.1.3 HECC As-Manufactured Impeller Coordinates
+coordinates of the HECC vaned diffuser configuration. The            (Hot, With Fillets)
+Design-Intent Impeller differs from the As-Manufactured                   The HECC As-Manufactured Impeller Coordinates
+Impeller as discussed in Section 4.6 Design-Intent and As-           (Hot, With Fillets) directory contains the As-
+Manufactured Geometry Differences. The differences                   Manufactured impeller blade section data at the hot,
+between the As-Manufactured and Design-Intent                        loaded conditions at 100 percent corrected speed. These
+geometries are isolated to the impeller, and there is good           coordinates were obtained by conducting a fluid-structure
+agreement between Design-Intent and As-Manufactured                  interaction study with coupled finite element and
+geometries for the diffuser vanes and the EGVs.                      computational fluid dynamics (CFD) analysis to determine
+     The component defined by the files is explicitly                the deformation of the As-Manufactured impeller
+included in each file name. The blade sections as given in           geometry from cold, unloaded conditions to hot, loaded
+the original report published by Medic et al. [1] and                conditions. The deformation is most notable near the
+reproduced here do not include the fillets that are present          trailing edge, where the total displacement is
+
+
+
+NASA/TM-20240003692/REV1                                        11                             Revision Date: December 23, 2024
+approximately 0.040 in. The As-Manufactured Hot                                  o RH: relative humidity
+impeller coordinates are recommended for use in                                  o RPM: rotational speed
+numerical simulations of the HECC at 100 percent                                 o TC: tip clearance
+corrected speed. The Hot As-Manufactured impeller blade                          o TM: metal temperature
+sections are given in the same convention as specified in                        o TT: total temperature
+Section 6.1.1 HECC Design-Intent Stage Coordinates (Hot,                • R: radial coordinate of instrumentation in inches
+No Fillets).                                                            • THETA: azimuthal coordinate of instrumentation
+    The cold-to-hot transformation of the As-                                in degrees (see Section 6 for convention)
+Manufactured impeller geometry was conducted by                         • Z: axial coordinate of instrumentation in inches
+Qingyuan Zhuang at Siemens, and the resulting Hot As-                        (see Section 6 for convention)
+Manufactured impeller coordinates have been generously                  • SPAN: spanwise location of instrumentation in
+provided to NASA to host on the Data Archive. The                            percent, increasing from hub=0 percent to
+procedures and analyses of the cold-to-hot                                   shroud=100 percent
+transformation will be published in a forthcoming paper                 • DPITCH: diffuser pitch location of instrumentation
+documenting the effect of the deformation from cold,                         in percent increasing from suction side to
+unloaded conditions to hot, loaded conditions on the                         pressure side of the diffuser vane (in the direction
+stage performance.                                                           of impeller rotation)
+    6.2 Data                                                            • EGVPITCH: EGV pitch location of instrumentation
+    The Data directory contains multiple files. Critical to                  in percent increasing from suction side to
+interpretation    of    the     actual     data    is    the                 pressure side of the diffuser vane (in the direction
+HECCvaned_metaData.csv, which contains metadata                              of impeller rotation)
+associated with the instrumentation and calculated                      Blank fields in the HECCvaned_metaData.csv
+parameters of the experiment in comma-delimited                     spreadsheet are generally not relevant to the associated
+format. Excluding the single line header, each row is either        parameter.
+instrumentation from the experiment or a calculated                     Of particular note in the meta data are the RDG,
+quantity. The single line column header has entries with            DFLAG, and CFLAG parameters. Each data entry has a
+data in each column as follows:                                     unique identifier referred to as a reading number that is
+    • CN: channel name corresponding to value in data               stored in the RDG column of the data spreadsheet. The
+         files                                                      DFLAG parameter is an integer flag identifier to signal the
+    • DESCRIPTION: description of the channel                       type of reading recorded. CFLAG is also an integer flag
+                                                                    identifier used to note the configuration of the
+    • UNITS: units of the channel
+                                                                    compressor at the time of the respective reading. For
+              o DEG F: degrees Fahrenheit
+              o DEG R: degrees Rankine                              example, this may indicate the presence or absence of
+              o MIL: thousandths of an inch                         survey probes or modular vanes. The integer values for
+              o PSIA: absolute pressure in lbf/in2                  the DFLAG and CFLAG used in the publicly available data
+              o PSID: differential pressure in lbf/in2              sets hosted in the archive at the time of writing and their
+              o RPM: rotations per minute                           associated meanings are given in Table 7 and Table 8.
+    • CAT: category of the channel                                      6.2.1 Tip Clearance
+              o AERO for aerodynamic instrumentation                     Due to the eccentricity of the impeller relative to the
+              o CALC for calculated parameter                       shroud, the tip clearance at the impeller trailing edge
+              o FLAG for noting data purpose or                     varies around the circumference of the exducer, and the
+                instrumentation configuration                       tip clearance value recorded in channel TCEX1 is 0.003 in.
+    • SCAT: subcategory for instrumentation type                    less than the maximum clearance around the
+              o DP: differential pressure                           circumference. During all vaned diffuser testing discussed
+              o MISC: miscellaneous                                 in Section 6, TCEX1 was set such that the maximum
+              o PS: static pressure                                 clearance value around the circumference was equivalent
+              o PT: total pressure
+
+
+NASA/TM-20240003692/REV1                                       12                              Revision Date: December 23, 2024
+TABLE 3. HECC          VANED      DFLAG    (DATA    FLAG)
+INTERPRETATION.
+ DFLAG Value                     Meaning
+       1             Steady-state speedline recording
+       8                    Stage inlet survey
+
+TABLE 4. HECC VANED CLFAG (CONFIGRUATION
+FLAG) INTERPRETATION.
+ CLFAG Value                      Meaning
+                    Modular vane total pressure rakes
+       1           installed at position 1 (MODVN1) and
+                            position 2 (MODVN2)
+                  Cobra-style three-hole probe installed
+       6             in the inlet duct upstream of the
+                                   impeller                           FIGURE    11:   HECC    VANED     DIFFUSER
+                                                                      CONFIGURATION COMPRESSOR MAP AT 0.012”
+                                                                      IMPELLER TRAILING EDGE CLEARANCE.
+to the intended value for clearance. The intended value
+for clearance is saved in the channel TCEXSET. TCEXSET is                 6.3 Data – Stage Inlet Surveys
+obtained by adding the difference between TCEX1 and the                   Stage inlet surveys were conducted with a cobra-style
+maximum clearance around the circumference (in this                  three-hole probe upstream of the impeller to quantify the
+section, 0.003 in.).                                                 flow angle and total pressure provided to the impeller. The
+     As an example, if the intended value for a reading is           surveys were acquired at numerous operating conditions
+0.012 in., the impeller would be translated axially until the        throughout the compressor map (Figure 12). The target
+value for TCEX1 was equal to 0.009 in. Because the                   operating conditions for many of the surveys was an exit
+difference between TCEX1 and the maximum clearance                   corrected mass flow rate of 3 lbm/s, which can be
+value is 0.003 in., the maximum clearance would be 0.012             observed in Figure 13, where the stage total pressure ratio
+in., and the value of 0.012 in. would be recorded in the             is given as a function of the stage exit corrected mass flow
+channel TCEXSET. In practice, the recorded values in these           rate. The surveys are obtained by traversing the probe
+channels are usually within 0.0005 in. of the target value.          across the span of the inlet duct at an axial coordinate of
+Further details on the tip clearance variation in the vaned          -1.00 inches. The compressor is maintained at the same
+diffuser testing documented herein are given by                      operating condition throughout the survey. An example of
+Braunscheidel et al. [4].                                            processed survey data is given in Figure 14. The Data
+    6.2.2 Experimental Data                                          directory contains the Stage Inlet Surveys directory, which
+    The experimental data is stored in separate files based          in turn contains the stage inlet survey files.
+on tip clearance setting. As noted in Section 6.2.1, the tip              The filenames within the directory indicate the
+clearance setting is the maximum tip clearance around the            operating condition at which the surveys were collected
+circumference and is stored in channel TCEXSET.                      and are in the following format:
+    In the present revision, detailed experimental data at                inletFlowAngleSurvey_XXXNc_XXexitTC_X.XlabSeal_X
+the design tip clearance is provided in the                               X.XXmdot_X.XXTPR.csv
+HECCvanedData_12MilExitClearance.csv file, and the                   Each series of characters between the underscores gives a
+compressor map in Figure 11 gives an overview of the data            specification of the operating conditions, and each X
+contained therein. The channels and descriptions in the              character is a numeric character giving values for each of
+data are included in the previously described                        the performance parameters within the name. The type of
+HECCvaned_metaData.csv file.                                         survey is initially given, followed by the percent corrected
+                                                                     speed in three digits (a leading 0 is present at speeds less
+                                                                     than 100 percent), tip clearance set point in thousandths
+
+
+NASA/TM-20240003692/REV1                                        13                              Revision Date: December 23, 2024
+FIGURE   12:    HECC VANED  DIFFUSER                                   FIGURE 14: HECC INLET SURVEY DATA AT 100
+CONFIGURATION MAP WITH INLET SURVEY                                    PERCENT CORRECTED SPEED, 10.77 LBM/S INLET
+LOCATIONS INDICATED.                                                   MASS FLOW RATE.
+                                                                        TABLE 5. HECC VANED INLET SURVEY CHANNELS
+                                                                        OVERVIEW (SEE METADATA FILE FOR DETAILS).
+                                                                                 Channel                       Summary
+                                                                                                      Probe location in percent
+                                                                                PROBESPAN            span from hub (0 percent)
+                                                                                                       to shroud (100 percent)
+                                                                                                      Calculated value of total
+                                                                                 INLETPT               pressure from the inlet
+                                                                                                             survey probe
+                                                                                                      Calculated value of inlet
+                                                                               INLETALPHA             absolute flow angle from
+                                                                                                        the inlet survey probe
+
+                                                                           The data within each of the survey files is structured
+                                                                       similarly to the previously discussed steady-state data,
+FIGURE   13:   HECC     VANED DIFFUSER                                 and only a few small changes are incorporated to
+CONFIGURATION MAP IN TERMS OF EXIT
+                                                                       accommodate the inclusion of survey data. The relevant
+CORRECTED MASS FLOW RATE WITH INLET
+SURVEY LOCATIONS INDICATED.                                            probe survey channels are outlined in Table 9 with
+                                                                       additional        details      included       in       the
+of an inch, labyrinth seal differential pressure (see                  HECCvaned_metaData.csv file, the structure of which is
+Sections 4.3 and 7.3.2 Baseline Experimental Data Sets)                detailed in Section 6.2 Data.
+corrected mass flow rate, and stage total pressure. As an                  Each individual survey recording is identified by a
+example,                         the                       file        unique reading number given in the survey data files.
+inletFlowAngleSurvey_099Nc_13exitTC_0.5labSeal_11.45                   Generally, the location of the probe in the PROBESPAN,
+mdot_5.02TPR.csv is stage inlet flow angle survey                      INLETPT, or INLETALPHA channels will change with each
+recorded at 99 percent corrected speed, an exducer exit                reading to build the survey of data across the span of the
+clearance of 0.013 in., a labyrinth seal differential pressure         inlet duct. In addition to the unique reading numbers in
+of 0.5 psid, corrected mass flow rate of 11.45 lbm/s, and a            the RDG column, a MEAN row is provided. The MEAN row is
+total pressure ratio of 5.02.                                          the average of the steady performance parameters
+
+
+NASA/TM-20240003692/REV1                                          14                             Revision Date: December 23, 2024
+recorded for each unique reading within the survey to give           The impeller is unchanged throughout the configurations,
+the average operating conditions over the entire survey              so the impeller blade sections are not repeated in the
+acquisition process.                                                 vaneless diffuser directory. However, they can be
+    General notes on the survey data files:                          retrieved from the vaned configuration blade sections as
+         • Any values for span data greater than 100                 documented in Section 6.1 HECC Vaned Stage Component
+            percent (PROBESPAN channel) indicate the                 Coordinates.
+            probe is recessed within the shroud.
+                                                                         7.2 Data – Baseline Metal Inlet
+         • The MEAN values are not applicable for the
+                                                                         The Data – Baseline Metal Inlet directory is
+            survey channels themselves, as the probe
+                                                                     structured in a fashion similar to that of the vaned diffuser
+            location changes throughout the survey.
+                                                                     data directories. Critical to interpretation of the actual
+         • The processed flow angle data is obtained                 data                          is                          the
+            through the method given by Treaster and                 HECCvaneless_baselineMetalInlet_metaData.csv, which
+            Yocum [11].                                              contains metadata associated with the instrumentation
+    6.4 Models                                                       and calculated parameters of the experiment in comma-
+    A solid model of the HECC vaned diffuser stage is                delimited format. Excluding the single line header, each
+available in the Models directory in the form of a step file,        row is either instrumentation from the experiment or a
+HECCvaned_AsManufacturedStage_cleanGeometry.stp.                     calculated quantity. The single line column header has
+The model is a simplified version of the original detailed           entries with data in each column as follows:
+model of the stage. Extraneous features, such as                         • CN: channel name corresponding to value in data
+instrumentation and components beyond the bounds of                          files
+the stage, are removed. The fillets on the blades of the                 • DESCRIPTION: description of the channel
+impeller, vaned diffuser, and EGV are all included.                      • UNITS: units of the channel
+Unfortunately, due to the complexity of the impeller                              o DEG F: degrees Fahrenheit
+model, the impeller often contains defects after exporting                        o DEG R: degrees Rankine
+from various modelling packages. To help mitigate this                            o MIL: thousandths of an inch
+issue, a separate impeller model is included in the                               o PSIA: absolute pressure in lbf/in2
+HECC_AsManufacturedImpeller_cleanGeometry.stp file.                               o PSID: differential pressure in lbf/in2
+Both models provide the As-Manufactured geometry of                               o RPM: rotations per minute
+the compressor stage and components at cold, unloaded                    • CAT: category of the channel
+conditions.                                                                       o AERO for aerodynamic instrumentation
+                                                                                  o CALC for calculated parameter
+7. HECC VANELESS DIFFUSER DATA SET                                                o FLAG for noting data purpose or
+     The HECC Vaneless Configuration directory contains                               instrumentation configuration
+the Coordinates, Data – Baseline Metal Inlet, Data –                     • SCAT: subcategory for instrumentation type
+Transition Duct Inlet, and Models directories. Although                           o DP: differential pressure
+the inlet configuration and diffuser configuration are                            o MISC: miscellaneous
+different from the vaned diffuser configuration, the                              o PS: static pressure
+impeller is unchanged. The convention for the data set is                         o PT: total pressure
+consistent with the other data sets in the archive and is                         o RH: relative humidity
+documented in Section 4.1 Convention. A review of the                             o RPM: rotational speed
+vaneless diffuser performance is provided by Harrison,                            o TC: tip clearance
+McNichols, and Blaha [3].                                                         o TM: metal temperature
+     7.1 Coordinates                                                              o TT: total temperature
+     The Vaneless Hub and Shroud - Baseline Metal Inlet                  • R: radial coordinate of instrumentation in inches
+(Hot) directory (located in the Coordinates directory                    • THETA: azimuthal coordinate of instrumentation
+contains the hot hub and shroud profiles of the vaneless                     in degrees (see Section 6 for convention)
+diffuser configuration with the baseline metal (BLM) inlet.
+
+
+NASA/TM-20240003692/REV1                                        15                              Revision Date: December 23, 2024
+    •   Z: axial coordinate of instrumentation in inches              TABLE 6. HECC VANELESS BASELINE METAL INLET
+          (see Section 6 for convention)                              DFLAG (DATA FLAG) INTERPRETATION.
+      • SPAN: spanwise location of instrumentation in
+                                                                       DFLAG Value                     Meaning
+          percent increasing from hub=0 percent to
+          shroud=100 percent                                                 1             Steady-state speedline recording
+      • SETTINGANGLE: angle of the instrumentation                    TABLE 7. HECC VANELESS BASELINE METAL INLET
+          relative to axial direction (only relevant to stage         CLFAG (CONFIGURATION FLAG) INTERPRETATION.
+          exit total pressure rakes)                                   CLFAG Value                      Meaning
+      Blank           fields         throughout           the                              Modular vane static pressure tap
+HECCvaneless_baselineMetalInlet_metaData.csv                                 8
+                                                                                          series installed (PMV3 and PMV4)
+spreadsheet are generally not relevant to the associated
+parameter.
+      Of particular note in the metadata are the RDG, DFLAG,         measured around the circumference according to the rub
+and CFLAG parameters. Each data entry has a unique                   probes.
+identifier referred to as a reading number that is stored in
+                                                                         7.2.2 Experimental Data
+the RDG column of the data spreadsheet. The DFLAG
+                                                                         The experimental data is stored in separate files based
+parameter is an integer flag identifier to signal the type of
+                                                                     on tip clearance setting. As noted in Section 7.2.1 Tip
+reading recorded. CFLAG is also an integer flag identifier
+                                                                     Clearance, the tip clearance setting is the maximum tip
+used to note the configuration of the compressor at the
+                                                                     clearance around the circumference and is stored in
+time of the respective reading. For example, this may
+                                                                     channel TCEXSET.
+indicate the presence or absence of survey probes or
+                                                                         In the present revision, detailed experimental data at
+modular instrumentation. For the vaneless diffuser,
+                                                                     the design tip clearance is provided in the
+various types of modular instrumentation may be installed
+                                                                     HECCvanelessData_baselineMetalInlet_12MilExitClearan
+from the shroud via access ports. The options for modular
+                                                                     ce.csv file, and the compressor map in Figure 15 gives an
+instrumentation are actuated probes, which can be
+                                                                     overview of the data contained therein. The channels and
+traversed across the span, total pressure rakes, total
+                                                                     descriptions in the data are included in the
+temperature rakes, and a series of static pressure taps.
+                                                                     HECCvaneless_baselineMetalInlet_metaData.csv             file
+      The integer values for the DFLAG and CFLAG used in
+                                                                     previously described.
+the publicly available data sets hosted in the archive at the
+                                                                         Finally, as noted by Harrison [3], the total temperature
+time of writing and their associated meanings are given in
+                                                                     rakes at the impeller exit failed before reaching high
+Table 10 and Table 11. For the different configurations
+                                                                     speeds in the vaneless diffuser test campaign. As such,
+indicated by CFLAG, the channels in the data files are
+                                                                     there are no total temperature measurements available at
+unchanged. This results in cases where the channels exist
+                                                                     the impeller trailing edge. However, the stage total
+but do not contain valid data. For clarity, for the channels
+                                                                     temperature rakes were functional through the entire test
+that are not connected during testing but still exist in the
+                                                                     campaign. Additionally, the impeller exit total
+file, the entries in the column are empty.
+                                                                     temperature rakes were redesigned for the transition duct
+    7.2.1 Tip Clearance                                              test, and that data was successfully acquired and
+     Due to the eccentricity of the impeller relative to the         recorded. The impeller exit total temperature data is
+shroud, the tip clearance at the impeller trailing edge              available in the transition duct data files.
+varies around the circumference of the exducer in the
+same manner as in the vaned diffuser testing. The details                 7.3 Data – Transition Duct Inlet
+of the tip clearance measurement are given in Section 4.5                 The Data – Transition Duct Inlet directory is
+Tip Clearance and Section 6.2.1 Tip Clearance. The                   structured in a fashion similar to that of the vaneless
+parameter TCEXSET contains the intended value of tip                 diffuser data directories. At the present revision, a single
+clearance at the impeller exit, which in the vaneless                metadata       file,  HECCvaneless_tDuct_metaData.csv,
+diffuser BLM data set is the maximum tip clearance                   provides the information for the instrumentation and
+                                                                     calculated parameters in the experimental data. Excluding
+                                                                     the single line header, each row is either instrumentation
+
+
+NASA/TM-20240003692/REV1                                        16                              Revision Date: December 23, 2024
+                                                                   •   THETA: azimuthal coordinate of instrumentation
+                                                                        in degrees (see Section 6 for convention)
+                                                                   •    Z: axial coordinate of instrumentation in inches
+                                                                        (see Section 6 for convention)
+                                                                   • SPAN: spanwise location of instrumentation in
+                                                                        percent increasing from hub=0 percent to
+                                                                        shroud=100 percent
+                                                                   • SETTINGANGLE: angle of the instrumentation
+                                                                        relative to axial direction (only relevant to stage
+                                                                        exit total pressure rakes)
+                                                                   Blank            fields         throughout            the
+                                                               HECCvaneless_tDuct_metaData.csv spreadsheet are
+                                                               generally not relevant to the associated parameter.
+                                                                   Key metadata for the transition duct are the RDG,
+                                                               DFLAG, and CFLAG parameters, and although the
+FIGURE 15: HECC VANELESS DIFFUSER BLM                          information for each of the flags is quite similar to that in
+CONFIGURATION COMPRESSOR MAP AT 0.012-                         Section 7.2 Data – Baseline Metal Inlet, the content is
+INCH IMPELLER TRAILING EDGE CLEARANCE.                         repeated here for convenience and clarity. Additionally,
+from the experiment or a calculated quantity. Each             the transition duct data contains an additional flag,
+column has headers and entries as follows:                     TDFLAG, which indicates the configuration of the
+    • CN: channel name corresponding to value in data          additively manufactured transition duct inlet. All
+       files                                                   transition duct inlet configurations are manufactured
+    • DESCRIPTION: description of the channel                  from Stratasys’s acrylonitrile styrene acrylate (ASA). The
+    • UNITS: units of the channel                              values and meanings of TDFLAG are given in Table 12, and
+            o DEG F: degrees Fahrenheit                        a detailed review of the transition duct configurations can
+            o DEG R: degrees Rankine                           be found in Harrison et al. [3]. For the modified hub inlet
+            o MIL: thousandths of an inch                      (TDFLAG =1), some static pressure taps along the hub of
+            o PSIA: absolute pressure in lbf/in2               the inlet flow path are removed. In the case where those
+            o PSID: differential pressure in lbf/in2           channels are invalid, the entries in the column are empty.
+            o RPM: rotations per minute                            Each data entry has a unique identifier referred to as
+                                                               a reading number that is stored in the RDG column of the
+    • CAT: category of the channel
+                                                               data spreadsheet. The DFLAG parameter is an integer flag
+            o AERO for aerodynamic instrumentation
+                                                               identifier to signal the type of reading recorded. CFLAG is
+            o CALC for calculated parameter
+                                                               also an integer flag identifier used to note the
+            o FLAG for noting data purpose or
+                                                               configuration of the compressor at the time of the
+               instrumentation configuration
+                                                               respective reading. For example, this may indicate the
+    • SCAT: subcategory for instrumentation type
+                                                               presence or absence of survey probes or modular
+            o DP: differential pressure
+                                                               instrumentation. For the vaneless diffuser, various types
+            o MISC: miscellaneous
+                                                               of modular instrumentation may be installed from the
+            o PS: static pressure
+                                                               shroud via access ports. The options for modular
+            o PT: total pressure
+                                                               instrumentation are actuated probes that can be
+            o RH: relative humidity
+                                                               traversed across the span, total pressure rakes, total
+            o RPM: rotational speed
+                                                               temperature rakes, and a series of static pressure taps.
+            o TC: tip clearance
+                                                                   The integer values for the DFLAG and CFLAG used in
+            o TM: metal temperature
+                                                               the publicly available data sets hosted in the archive at the
+            o TT: total temperature
+                                                               time of writing and their associated meanings are given in
+    • R: radial coordinate of instrumentation in inches
+                                                               Table 13 and Table 14. For the different configurations
+                                                               indicated by CFLAG, the channels in the data files are
+
+
+NASA/TM-20240003692/REV1                                  17                              Revision Date: December 23, 2024
+TABLE 8. HECC VANELESS TRANSITION DUCT INLET
+TDFLAG (DATA FLAG) INTERPRETATION.
+
+  TDFLAG Value                  Meaning
+                        Baseline inlet, additively
+           0
+                           manufactured ASA
+                       Modified-hub inlet, additively
+           1
+                           manufactured ASA
+
+TABLE 9. HECC VANELESS TRANSITION DUCT DFLAG
+(DATA FLAG) INTERPRETATION.
+ DFLAG Value                    Meaning
+       1             Steady-state speedline reading
+       5              Impeller exit survey reading
+
+                                                                     FIGURE   16:  HECC  VANELESS  DIFFUSER
+                                                                     COMPRESSOR MAP AT 0.012 IN. IMPELLER
+TABLE 10. HECC VANELESS TRANSITION DUCT                              TRAILING EDGE CLEARANCE FOR EACH INLET
+CLFAG (CONFIGRUATION FLAG) INTERPRETATION.                           CONFIGURATION.
+ CLFAG Value                      Meaning                           revision, detailed experimental data at the design tip
+                 Modular vane total pressure rakes are              clearance for the baseline plastic inlet and modified hub
+                 installed at impeller exit rating station          inlet           are         provided          in          the
+       0
+                         (PMV1 and PMV2 series                      HECCtductData_TD00_12MilExitClearance.csv                and
+                             instrumentation)                       HECCtductData_TD01_12MilExitClearance.csv               files,
+                   Three-hole cobra-style probes are                respectively. The compressor map in Figure 16 shows the
+                   installed at the impeller exit rating            overall performance of the vaneless diffuser configuration
+       1
+                     station (MV1C and MV2C series                  with the baseline metal inlet (BLM), baseline plastic (BLP),
+                             instrumentation)                       and modified hub (MH) inlet configurations. The
+                      Total temperature probes are                  difference in low (stalling) and high (choking) mass flow
+       2           installed at the impeller exit rating            rates recorded for the BLM and BLP/MH testing is due only
+                       station (MV1TT and MV2TT)                    to testing decisions and is not derived from the change in
+                                                                    inlet configuration itself. The low mass flow rate was
+                                                                    limited by the throttle during BLM testing. The throttle
+unchanged. This results in cases where the channels exist           was then adjusted to accommodate larger mass flow rates
+but do not contain valid data. For clarity, when the                during the BLP/MH testing, which allowed the impeller to
+channels were not connected during testing but still exist          approach inducer choke at high speeds. Additionally,
+in the file, the entries in the column are empty.                   surge testing was conducted during the BLM test. To
+    7.3.1 Tip Clearance                                             preserve the integrity of the plastic components, surge
+     The eccentricity of the impeller relative to the shroud        was avoided in the BLP/MH testing. The channels and
+discussed in Section 6.2.1 Tip Clearance was improved in            descriptions in the data are included in the previously
+the transition duct testing. As such, the parameters TCEX1          described HECCtduct_metaData.csv file.
+and TCEXSET are identical. Further details on the                         Also included in the experimental data is the
+eccentricity of the tip clearance are given by Harrison et          HECCtductData_TD00_12MilExitClearance_CLSDP0.csv
+al. [7].                                                            file. This set of experimental data is recorded with the BLP
+    7.3.2 Baseline Experimental Data Sets                           inlet and vaneless diffuser as well, but the compressor
+    The experimental data is stored in separate files based         labyrinth seal differential pressure (CLSDP) has been set to
+on tip clearance and inlet configuration. In the present            0 psid. The labyrinth seal allows for bleed flow to pass
+
+
+
+NASA/TM-20240003692/REV1                                       18                               Revision Date: December 23, 2024
+ FIGURE 17: HECC VANELESS DIFFUSER BLP                               FIGURE 19: HECC VANELESS DIFFUSER BLP
+ CONFIGURATION COMPRESSOR MAP AT 0.012 IN.                           CONFIGURATION COMPRESSOR MAP FOR ALL
+ IMPELLER TRAILING EDGE CLEARANCE FOR                                ACQUIRED CLEARANCE CONDITIONS.
+ NOMINAL AND 0 PSID LAB SEAL DIFFERENTIAL
+ PRESSURE.                                                           positive        values        for        CLSDP.         The
+                                                                     HECCtductData_TD00_12MilExitClearance_CLSDP0.csv
+                                                                     data set was recorded with the value for the labyrinth seal
+                                                                     set to 0 psid such that there should be no flow out of the
+                                                                     stage through the backface leak path. It is provided to give
+                                                                     simplified operating conditions in which there is minimal
+                                                                     secondary flow into or out of the stage. From 0.0 psid to
+                                                                     0.5 psid, the labyrinth seal bleed has a negligible impact
+                                                                     on the stage compressor map in terms of stage total
+                                                                     pressure ratio (Figure 17) and efficiency (Figure 18).
+                                                                          7.4 Data – Tip Clearance
+                                                                          The tip clearance data set is also contained in the Data
+                                                                     – Transition Duct Inlet directory because the associated
+                                                                     data were acquired with the BLP additively manufactured
+                                                                     inlet configuration. Metadata associated with the tip
+                                                                     clearance data set are the exact same as that given in the
+                                                                     HECCvaneless_tDuct_metaData.csv file. As such, users of
+FIGURE 18: HECC VANELESS DIFFUSER BLP
+CONFIGURATION EFFICIENCY MAP AT 0.012 IN.                            the archive are directed to Section 7.3 Data – Transition
+IMPELLER TRAILING EDGE CLEARANCE FOR                                 Duct Inlet for details on the configuration metadata.
+NOMINAL AND 0 PSID LAB SEAL DIFFERENTIAL                                  Both steady-state speedline and impeller exit survey
+PRESSURE.                                                            data were collected at tip clearance values of 0.012 in.,
+behind the backface of the impeller and exit through the             0.018 in., 0.024 in., and 0.030 in. The steady-state data are
+secondary air flow system (see Section 4.3 Bleed Flows               contained in the HECCtductData_TD00_allClearance.csv
+and Metal Temperatures). In all previously discussed data            file. A compressor map of the tip clearance data set is
+sets, the labyrinth seal was set to 0.5 psid to provide air          given in Figure 19 for reference. As previously stated, the
+flow for cooling the backface region of the compressor               experimental data were acquired from near-choke to
+stage: high pressure air at the impeller trailing edge passes        near-stall conditions. Instability was avoided to preserve
+across the backface and exits through the labyrinth seal at          the integrity of the plastic inlet components.
+
+
+
+NASA/TM-20240003692/REV1                                        19                              Revision Date: December 23, 2024
+                                                                         •    impellerExitTtSurvey_TDX_XXXNc_XXexitTC_X.Xla
+                                                                              bSeal_X.XXmdot_X.XXTPR.csv
+                                                                          Each series of characters between the underscores
+                                                                     gives a specification of the operating conditions, and each
+                                                                     X character is a numeric character giving values for each
+                                                                     of the performance parameters within the name. The type
+                                                                     of survey is initially given, followed by the transition duct
+                                                                     configuration (see Table 12), percent corrected speed in
+                                                                     three digits (a leading 0 is present at speeds less than 100
+                                                                     percent), tip clearance set point in thousandths of an inch,
+                                                                     labyrinth seal differential pressure (see Sections 4.3 and
+                                                                     7.3.2 Baseline Experimental Data Sets), corrected mass
+                                                                     flow rate, and stage total pressure. For example, the file
+                                                                     impellerExitFlowAngleSurvey_TD0_085Nc_18exitTC_0.5l
+                                                                     abSeal_8.76mdot_3.47TPR.csv is an impeller exit flow
+FIGURE 20: HECC IMPELLER MAP WITH OPERATING                          angle survey recorded with the baseline plastic transition
+CONDITIONS AT WHICH IMPELLER EXIT FLOW                               duct configuration at 85 percent corrected speed, an
+ANGLE SURVEYS WERE COLLECTED INDICATED                               exducer exit clearance of 0.018 in., a labyrinth seal
+BY STARS.                                                            differential pressure of 0.5 psid, corrected mass flow rate
+     Impeller exit surveys of flow angle and total                   of 8.76 lbm/s, and a total pressure ratio of 3.47.
+temperature were also acquired at each tip clearance                      The data within each of the survey files is structured
+condition. The details for interpretation of the impeller            similarly to the previously discussed steady-state data,
+exit surveys are provided in Section 7.5 Data – Impeller             and only a few small changes are incorporated to
+Exit Surveys.                                                        accommodate the inclusion of survey data. The relevant
+                                                                     probe survey channels are outlined in Table 15 with
+     7.5 Data – Impeller Exit Surveys                                additional         details        included       in       the
+     Impeller exit surveys of flow angle, total pressure, and        HECCvaneless_tDuct_metaData.csv file, the structure of
+total temperature were acquired at numerous operating                which is detailed in Section 7.3 Data – Transition Duct
+conditions throughout the operating range of the                     Inlet.
+compressor (Figure 20). The surveys were obtained by                      Each individual survey recording is identified by a
+traversing probes across the span of the vaneless diffuser           unique reading number given in the survey data files.
+at the impeller exit rating plane, and the compressor was            Generally, the location of the probe in the PACXX,
+maintained at the same operating condition throughout                MVXPANGLE, or MVXSPAN channels will change with each
+the survey. Examples of processed survey data can be                 reading to build the survey of data across the span at the
+found in Reference [7].                                              impeller exit rating station. In addition to the unique
+     The Data – Transition Duct Inlet directory contains             reading numbers in the RDG column, a MEAN row is
+the Impeller Exit Surveys directory, which in turn contains          provided. The MEAN row is the average of the steady
+the Flow Angle and Total Temperature directories. As                 performance parameters recorded for each unique
+their names indicate, Flow Angle and Total Temperature               reading within the survey to give the average operating
+directories contain impeller exit surveys of flow angle and          conditions over the entire survey acquisition process.
+temperature data across the span at the impeller exit                     General notes on the survey data files:
+rating station.                                                           • Any values for span data less than 0 percent
+     The filenames within each of the subdirectories                          (PACXX channels) or greater than 100 percent
+indicate the operating condition at which the surveys                         (MVXSPAN channels) indicate the probe is recessed
+were collected and are in the following format:                               within the shroud.
+     • impellerExitFlowAngleSurvey_TDX_XXXNc_XXexit                       • The MEAN values are not applicable for the survey
+         TC_X.XlabSeal_X.XXmdot_X.XXTPR.csv                                   channels themselves, as the probe location
+                                                                              changes throughout the survey.
+
+
+NASA/TM-20240003692/REV1                                        20                              Revision Date: December 23, 2024
+TABLE 11. HECC VANELESS TRANSITION DUCT                                 https://ntrs.nasa.gov/citations/20180001471.
+SURVEY CHANNELS OVERVIEW (SEE METADATA                                  [Accessed: 11-Oct-2022].
+FILE FOR DETAILS).                                                  [2] Brokopp, R., and Gronski, R., 1992, “Small Engine
+                                                                        Components Test Facility Compressor Testing Cell at
+          Channel                      Summary
+                                                                        NASA Lewis Research Center,” American Institute of
+                                   Raw survey probe
+                                                                        Aeronautics and Astronautics, Nashville, TN.
+                              actuator angular position,
+        PAC01, PAC03                                                    https://doi.org/10.2514/6.1992-3980.
+                                 measured in degrees
+                                                                    [3] Harrison, H. M., McNichols, E. O., and Blaha, M. R.,
+                              relative to radial direction
+                                                                        2023, “NASA Small Engine Components Compressor
+                                   Raw survey probe
+                                                                        Test Facility: High Efficiency Centrifugal Compressor
+                               actuator linear position
+                                                                        Vaneless Diffuser and Transition Duct Configurations,”
+                              measured in percent span
+                                                                        Boston, MA, American Society of Mechanical
+        PAC02, PAC04             with shroud and hub
+                                                                        Engineers Digital Collection.
+                                  corresponding to 0
+                                                                    [4] Braunscheidel, E. P. W., Welch, G. E., Skoch, G. J.,
+                               percent and 100 percent
+                                                                        Medic, G., and Sharma, O. P., 2015, “Aerodynamic
+                                   span, respectively
+                                                                        Performance of a Compact, High Work-Factor
+                                  Raw pressure data                     Centrifugal Compressor at the Stage and
+                                 measured with each                     Subcomponent Level,” AIAA, Cleveland, OH, United
+  MV1CC, MV1CL, MV1CR,          cobra-style three-hole                  States.               [Online].               Available:
+  MV2CC, MV2CL, MV2CR           probe measured at the                   https://ntrs.nasa.gov/search.jsp?R=20150019738.
+                                modular vane 1 and 2                    [Accessed: 16-Jul-2020].
+                                       locations                    [5] Robles Vega, G., Bosshart, A. J., Ni, M., Ni, R.-H.,
+                                Raw total temperature                   Harrison, H. M., and Nguyen-Huynh, T., 2024, “NASA
+                              data measured with each                   HECC Geometry and Performance Review Part 1:
+                                cobra-style three-hole                  Validation of a Computational Model for the Vaneless
+        MV1TT, MV1TT
+                                probe measured at the                   Diffuser Configuration with As-Manufactured
+                                modular vane 1 and 2                    Impeller Geometry,” American Society of Mechanical
+                                       locations                        Engineers Digital Collection, London, England.
+   MV1PANGLE, MV1PT,                                                [6] Robles Vega, G., Bosshart, A. J., Ni, M., Ni, R.-H.,
+                                 Processed three-hole
+   MV2PANGLE, MV2PT,                                                    Harrison, H. M., and Nguyen-Huynh, T., 2024, “NASA
+                                  probe and/or total
+  MV1ALPHA, MV2ALPHA,                                                   HECC Geometry and Performance Review Part 2:
+                               temperature probe data
+   MV1SPAN, MV2SPAN,                                                    Geometric Differences Between the As-Manufactured
+                                                                        and Design-Intent Impeller Geometry and Their
+    •    The processed flow angle data is obtained                      Effects on the Vaneless Diffuser Configuration
+         through the method given by Treaster and Yocum                 Performance,” American Society of Mechanical
+         [11].                                                          Engineers Digital Collection, London, England.
+                                                                    [7] Harrison, H. M., Nguyen-Huynh, T., and Mathison, R.,
+     7.6 Models
+                                                                        2024, “NASA HECC Geometry and Performance
+     The solid model of the HECC vaneless diffuser is
+                                                                        Review Part 3: A Numerical And Experimental
+provided in the HECCvaneless_cleanGeometry.stp file. As
+                                                                        Investigation of Tip Clearance Effects on the Vaneless
+with other solid models in the Data Archive, the geometry
+                                                                        Diffuser Configuration,” American Society of
+is provided at cold, unloaded conditions.
+                                                                        Mechanical Engineers Digital Collection, London,
+8. REFERENCES                                                           England.
+[1] Medic, G., Sharma, O. P., Jongwook, J., Hardin, L. W.,          [8] Lemmon, E. W., Bell, I. H., Huber, M. L., and McLinden,
+    McCormick, D. C., Cousins, W. T., Lurie, E. A., Shabbir,            M. O., 2018, “NIST Standard Reference Database 23:
+    A., Holley, B. M., and Van Slooten, P. R., 2017, High               Reference Fluid Thermodynamic and Transport
+    Efficiency Centrifugal Compressor for Rotorcraft                    Properties-REFPROP, Version 10.0, National Institute
+    Applications,    E-18856-1. [Online]. Available:
+
+
+NASA/TM-20240003692/REV1                                       21                              Revision Date: December 23, 2024
+     of Standards and Technology.” [Online]. Available:                    Uncertainty,” Journal of Engineering for Gas Turbines
+     https://www.nist.gov/srd/refprop.                                     and        Power,       136(1),       p.     012601.
+[9] Berdanier, R. A., Smith, N. R., Fabian, J. C., and Key, N.             https://doi.org/10.1115/1.4025317.
+     L., 2015, “Humidity Effects on Experimental                      [11] Treaster, A. L., and Yocum, A. M., 1978, The
+     Compressor Performance—Corrected Conditions for                       Calibration and Application of Five-Hole Probes, TM
+     Real Gases,” J. Turbomach, 137(3), p. 031011.                         78-10, Pennsylvania State University, Applied
+     https://doi.org/10.1115/1.4028356.                                    Research Laboratory, State College, PA. [Online].
+[10] Lou, F., Fabian, J., and Key, N. L., 2014, “The Effect of             Available:
+     Gas Models on Compressor Efficiency Including                         https://apps.dtic.mil/sti/citations/ADA055870.
+
+
+
+
+NASA/TM-20240003692/REV1                                         22                             Revision Date: December 23, 2024
+
