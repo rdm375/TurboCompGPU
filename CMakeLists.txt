@@ -1416,3 +1416,35 @@ add_test(
     COMMAND turbocompgpu_complete_stage_reduced_recovery
         ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/results-complete-stage-characteristic/radius-sensitivity.csv
 )
+
+# Stage 8C.1b: frictional vaneless diffuser reference.
+add_executable(
+    turbocompgpu_vaneless_diffuser_friction
+    tests/vaneless_diffuser_friction.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_vaneless_diffuser_friction
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME vaneless_diffuser_friction
+    COMMAND turbocompgpu_vaneless_diffuser_friction
+)
+
+# Stage 8C.1c: frictional diffuser numerical verification.
+add_executable(
+    turbocompgpu_vaneless_diffuser_friction_verification
+    tests/vaneless_diffuser_friction_verification.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_vaneless_diffuser_friction_verification
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME vaneless_diffuser_friction_verification
+    COMMAND turbocompgpu_vaneless_diffuser_friction_verification
+)
