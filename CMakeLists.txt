@@ -1398,3 +1398,21 @@ add_test(
     COMMAND turbocompgpu_complete_stage_recovery_geometry
         ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/results-complete-stage-characteristic/radius-sensitivity.csv
 )
+
+
+# Stage 8B.5e: reduced analytical recovery solver versus
+# the independently generated complete-stage reference roots.
+add_executable(
+    turbocompgpu_complete_stage_reduced_recovery
+    tests/complete_stage_reduced_recovery.cpp
+)
+target_link_libraries(
+    turbocompgpu_complete_stage_reduced_recovery
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME complete_stage_reduced_recovery
+    COMMAND turbocompgpu_complete_stage_reduced_recovery
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/results-complete-stage-characteristic/radius-sensitivity.csv
+)
