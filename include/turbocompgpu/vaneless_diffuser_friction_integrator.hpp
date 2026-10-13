@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <numbers>
+#include <utility>
 #include <stdexcept>
 
 namespace turbocompgpu {
@@ -67,23 +68,22 @@ struct Derivatives {
 
 } // namespace frictional_diffuser_integrator_detail
 
-template<class DerivativeProvider>
+template<class GeometryProvider, class DerivativeProvider>
 inline FrictionalDiffuserResult
-integrate_frictional_vaneless_diffuser(
+integrate_frictional_vaneless_diffuser_profile(
     const thermomodel::Model& model,
-    const VanelessDiffuserGeometry& geometry,
+    double inlet_radius,
+    double outlet_radius,
+    GeometryProvider&& geometry_provider,
     const VanelessDiffuserInlet& inlet,
     const FrictionalDiffuserOptions& options,
     DerivativeProvider&& derivative_provider)
 {
 
-    if (!(std::isfinite(geometry.inlet_radius) &&
-          std::isfinite(geometry.outlet_radius) &&
-          std::isfinite(geometry.outlet_width) &&
-          geometry.inlet_radius > 0.0 &&
-          geometry.outlet_radius > geometry.inlet_radius &&
-          geometry.outlet_width > 0.0 &&
-          geometry.outlet_blockage == 0.0 &&
+    if (!(std::isfinite(inlet_radius) &&
+          std::isfinite(outlet_radius) &&
+          inlet_radius > 0.0 &&
+          outlet_radius > inlet_radius &&
           std::isfinite(inlet.mass_flow) &&
           inlet.mass_flow > 0.0 &&
           std::isfinite(inlet.meridional_velocity) &&
@@ -105,9 +105,16 @@ integrate_frictional_vaneless_diffuser(
     const auto state2 = evaluate(
         model, inlet.static_state.T, inlet.static_state.p);
 
+    const auto inlet_geometry = geometry_provider(inlet_radius);
+    const double inlet_width = inlet_geometry.first;
+    if (!(std::isfinite(inlet_width) && inlet_width > 0.0 &&
+          std::isfinite(inlet_geometry.second))) {
+        throw std::invalid_argument(
+            "Invalid diffuser inlet geometry");
+    }
     const double area2 =
         2.0 * std::numbers::pi *
-        geometry.inlet_radius * geometry.outlet_width;
+        inlet_radius * inlet_width;
 
     const double expected_mass =
         state2.rho * area2 * inlet.meridional_velocity;
@@ -136,17 +143,25 @@ integrate_frictional_vaneless_diffuser(
     double angular_momentum_integral = 0.0;
 
     const double dr =
-        (geometry.outlet_radius - geometry.inlet_radius) /
+        (outlet_radius - inlet_radius) /
         options.radial_steps;
 
     for (int i = 0; i < options.radial_steps; ++i) {
         const double r =
-            geometry.inlet_radius + i * dr;
+            inlet_radius + i * dr;
 
         auto rhs = [&](double radius, const frictional_diffuser_integrator_detail::Vector& state) {
+            const auto [width, width_derivative] =
+                geometry_provider(radius);
+            if (!(std::isfinite(width) && width > 0.0 &&
+                  std::isfinite(width_derivative))) {
+                throw std::invalid_argument(
+                    "Invalid diffuser width profile");
+            }
             return derivative_provider(
                 radius,
-                geometry.outlet_width,
+                width,
+                width_derivative,
                 inlet.mass_flow,
                 options.darcy_friction_factor,
                 options.derivative_relative_step,
@@ -188,9 +203,16 @@ integrate_frictional_vaneless_diffuser(
 
     const auto state3 = evaluate(model, y[1], y[0]);
 
+    const auto outlet_geometry = geometry_provider(outlet_radius);
+    const double outlet_width = outlet_geometry.first;
+    if (!(std::isfinite(outlet_width) && outlet_width > 0.0 &&
+          std::isfinite(outlet_geometry.second))) {
+        throw std::invalid_argument(
+            "Invalid diffuser outlet geometry");
+    }
     const double area3 =
         2.0 * std::numbers::pi *
-        geometry.outlet_radius * geometry.outlet_width;
+        outlet_radius * outlet_width;
 
     const double u3 =
         inlet.mass_flow / (state3.rho * area3);
@@ -199,10 +221,10 @@ integrate_frictional_vaneless_diffuser(
         state3.h + 0.5 * (u3 * u3 + y[2] * y[2]);
 
     const double L2 =
-        geometry.inlet_radius * inlet.tangential_velocity;
+        inlet_radius * inlet.tangential_velocity;
 
     const double L3 =
-        geometry.outlet_radius * y[2];
+        outlet_radius * y[2];
 
     FrictionalDiffuserResult result{};
 
@@ -242,6 +264,55 @@ integrate_frictional_vaneless_diffuser(
     result.radial_steps = options.radial_steps;
 
     return result;
+}
+
+
+template<class DerivativeProvider>
+inline FrictionalDiffuserResult
+integrate_frictional_vaneless_diffuser(
+    const thermomodel::Model& model,
+    const VanelessDiffuserGeometry& geometry,
+    const VanelessDiffuserInlet& inlet,
+    const FrictionalDiffuserOptions& options,
+    DerivativeProvider&& derivative_provider)
+{
+    if (!(std::isfinite(geometry.outlet_width) &&
+          geometry.outlet_width > 0.0 &&
+          geometry.outlet_blockage == 0.0)) {
+        throw std::invalid_argument(
+            "Invalid constant-width diffuser geometry");
+    }
+
+    auto profile = [&](double) {
+        return std::pair{
+            geometry.outlet_width, 0.0
+        };
+    };
+
+    auto adapted_derivatives =
+        [&](double radius,
+            double width,
+            double /*width_derivative*/,
+            double mass_flow,
+            double friction_factor,
+            double relative_step,
+            double singularity_tolerance,
+            const frictional_diffuser_integrator_detail::Vector& y)
+    {
+        return derivative_provider(
+            radius, width, mass_flow,
+            friction_factor, relative_step,
+            singularity_tolerance, y);
+    };
+
+    return integrate_frictional_vaneless_diffuser_profile(
+        model,
+        geometry.inlet_radius,
+        geometry.outlet_radius,
+        profile,
+        inlet,
+        options,
+        adapted_derivatives);
 }
 
 } // namespace turbocompgpu

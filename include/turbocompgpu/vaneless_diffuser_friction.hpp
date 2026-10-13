@@ -17,7 +17,8 @@ inline frictional_diffuser_integrator_detail::Derivatives evaluate_rhs(
     double friction_factor,
     double relative_step,
     double singularity_tolerance,
-    const frictional_diffuser_integrator_detail::Vector& y)
+    const frictional_diffuser_integrator_detail::Vector& y,
+    double width_derivative = 0.0)
 {
     const double p = y[0];
     const double T = y[1];
@@ -92,11 +93,15 @@ inline frictional_diffuser_integrator_detail::Derivatives evaluate_rhs(
     const double A22 =
         h_T - u * u * rho_T / state.rho;
 
+    const double area_gradient =
+        1.0 / radius + width_derivative / width;
+
     const double B1 =
-        (u * u + v * v) / radius - friction * u;
+        u * u * area_gradient +
+        v * v / radius - friction * u;
 
     const double B2 =
-        u * u / radius - v * dv;
+        u * u * area_gradient - v * dv;
 
     const double determinant =
         A11 * A22 - A12 * A21;

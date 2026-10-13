@@ -1496,3 +1496,35 @@ add_test(
     NAME complete_stage_friction_verification
     COMMAND turbocompgpu_complete_stage_friction_verification
 )
+
+# Stage 9B.2: variable-width vaneless diffuser.
+add_executable(
+    turbocompgpu_vaneless_diffuser_variable_width
+    tests/vaneless_diffuser_variable_width.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_vaneless_diffuser_variable_width
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME vaneless_diffuser_variable_width
+    COMMAND turbocompgpu_vaneless_diffuser_variable_width
+)
+
+# Stage 9B.2: independent variable-width verification.
+add_executable(
+    turbocompgpu_vaneless_diffuser_variable_width_verification
+    tests/vaneless_diffuser_variable_width_verification.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_vaneless_diffuser_variable_width_verification
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME vaneless_diffuser_variable_width_verification
+    COMMAND turbocompgpu_vaneless_diffuser_variable_width_verification
+)
