@@ -1464,3 +1464,35 @@ add_test(
     NAME vaneless_diffuser_friction_analytical
     COMMAND turbocompgpu_vaneless_diffuser_friction_analytical
 )
+
+# Stage 9A.1: frictional complete-stage integration.
+add_executable(
+    turbocompgpu_complete_stage_friction
+    tests/complete_stage_friction.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_complete_stage_friction
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME complete_stage_friction
+    COMMAND turbocompgpu_complete_stage_friction
+)
+
+# Stage 9A.2: independent frictional complete-stage verification.
+add_executable(
+    turbocompgpu_complete_stage_friction_verification
+    tests/complete_stage_friction_verification.cpp
+)
+
+target_link_libraries(
+    turbocompgpu_complete_stage_friction_verification
+    PRIVATE turbocompgpu
+)
+
+add_test(
+    NAME complete_stage_friction_verification
+    COMMAND turbocompgpu_complete_stage_friction_verification
+)
