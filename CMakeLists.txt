@@ -1528,3 +1528,19 @@ add_test(
     NAME vaneless_diffuser_variable_width_verification
     COMMAND turbocompgpu_vaneless_diffuser_variable_width_verification
 )
+
+# Stage 9B.3: measured-wall geometry infrastructure.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_diffuser_wall_geometry
+        tests/diffuser_wall_geometry.cpp
+    )
+    target_link_libraries(
+        turbocompgpu_diffuser_wall_geometry
+        PRIVATE turbocompgpu
+    )
+    add_test(
+        NAME diffuser_wall_geometry
+        COMMAND turbocompgpu_diffuser_wall_geometry
+    )
+endif()
