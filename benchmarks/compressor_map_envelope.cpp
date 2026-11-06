@@ -5,7 +5,6 @@
 #include <thermomodel/caloric.hpp>
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -14,6 +13,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -42,6 +42,34 @@ ImpellerSystemGeometry geometry()
 NonlinearResidualScales scales()
 {
     return {50000.0, 100.0, 500000.0};
+}
+
+std::vector<double> linear_grid(
+    double lower,
+    double upper,
+    int count)
+{
+    std::vector<double> values;
+    values.reserve(static_cast<std::size_t>(count));
+
+    for (int i = 0; i < count; ++i) {
+        const double fraction =
+            static_cast<double>(i) / static_cast<double>(count - 1);
+        values.push_back(lower + fraction * (upper - lower));
+    }
+
+    return values;
+}
+
+int parse_sample_count(const char* text, const char* name)
+{
+    std::size_t consumed = 0;
+    const int count = std::stoi(text, &consumed);
+    if (consumed != std::string(text).size() || count < 2 || count > 500) {
+        throw std::invalid_argument(
+            std::string(name) + " must be an integer from 2 to 500");
+    }
+    return count;
 }
 
 void check_close(
@@ -199,7 +227,9 @@ void sweep(
     const thermomodel::Model& model,
     const std::string& model_name,
     std::ofstream& csv,
-    Counts& counts)
+    Counts& counts,
+    const std::vector<double>& flows,
+    const std::vector<double>& speeds)
 {
     const auto g = geometry();
     const auto s = scales();
@@ -210,14 +240,6 @@ void sweep(
 
     NonlinearSolverOptions options;
     options.residual_tolerance = 1.0e-13;
-
-    constexpr std::array<double, 7> flows {
-        2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0
-    };
-
-    constexpr std::array<double, 5> speeds {
-        9000.0, 10500.0, 12000.0, 13500.0, 15000.0
-    };
 
     for (double speed : speeds) {
         NonlinearUnknowns previous {
@@ -278,10 +300,22 @@ void sweep(
 int main(int argc, char** argv)
 {
     try {
+        if (argc > 4) {
+            throw std::invalid_argument(
+                "Usage: turbocompgpu_compressor_map_envelope "
+                "[output.csv] [flow-count=7] [speed-count=5]");
+        }
+
         const std::filesystem::path output =
             argc > 1
                 ? argv[1]
                 : "benchmarks/results-compressor-map/map.csv";
+        const int flow_count =
+            argc > 2 ? parse_sample_count(argv[2], "flow-count") : 7;
+        const int speed_count =
+            argc > 3 ? parse_sample_count(argv[3], "speed-count") : 5;
+        const auto flows = linear_grid(2.0, 8.0, flow_count);
+        const auto speeds = linear_grid(9000.0, 15000.0, speed_count);
 
         if (!output.parent_path().empty())
             std::filesystem::create_directories(output.parent_path());
@@ -319,20 +353,26 @@ int main(int argc, char** argv)
 
         const thermomodel::PengRobinson pr(caloric);
 
-        sweep(ideal, "IdealGas", csv, counts);
-        sweep(pr, "PengRobinson", csv, counts);
+        sweep(ideal, "IdealGas", csv, counts, flows, speeds);
+        sweep(pr, "PengRobinson", csv, counts, flows, speeds);
 
-        if (counts.solves != 140 ||
-            counts.converged != 140 ||
-            counts.validated != 140 ||
-            counts.physical != 140 ||
-            counts.mapped != 140 ||
-            counts.paired != 70) {
+        const int expected_pairs = 2 * flow_count * speed_count;
+        const int expected_solves = 2 * expected_pairs;
+
+        if (counts.solves != expected_solves ||
+            counts.converged != expected_solves ||
+            counts.validated != expected_solves ||
+            counts.physical != expected_solves ||
+            counts.mapped != expected_solves ||
+            counts.paired != expected_pairs) {
             throw std::runtime_error(
                 "Compressor-map envelope acceptance criteria failed");
         }
 
         std::cout
+            << "flow_lines=" << flow_count
+            << " speed_lines=" << speed_count
+            << ' '
             << "solves=" << counts.solves
             << " converged=" << counts.converged
             << " validated=" << counts.validated
