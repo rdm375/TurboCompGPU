@@ -1,205 +1,78 @@
 # TurboCompGPU
 
-Physics-based centrifugal compressor modeling with real-gas
-thermodynamics and high-performance numerical methods.
+TurboCompGPU is a C++20 compressor-modeling project built on
+[ThermoGPU](https://github.com/rdm375/ThermoGPU). It is intended to support two related engineering goals:
 
-TurboCompGPU is an open-source scientific computing project
-for modeling centrifugal compressor performance using
-ThermoGPU 2.0, meanline aerodynamics, and validated nonlinear
-numerical methods.
+1. **Pipeline modeling:** provide a compressor component that can be coupled to a transient pipe model.
+2. **A semi-realistic surrogate candidate:** continue the ReLU interpolation approach from the original NN Interpolation hackathon, using compressor-operation samples and a physics-based model as possible sources of reference data.
 
-The project is developed in C++20 and licensed under
-GPL-3.0-or-later.
-
-## M1.6b.2 — Incidence-aware compressor modeling
-
-The current development milestone introduces a physics-based,
-flow-dependent incidence-loss closure into the nonlinear
-centrifugal compressor solver.
-
-Validation includes:
-
-- Three thermodynamic models: air-like ideal gas,
-  methane ideal gas, and methane Peng-Robinson.
-- 105 paired compressor operating points.
-- 315 successful nonlinear solutions, including
-  zero-coefficient regression checks.
-- Analytical validation of the zero-incidence locus.
-- Independent algebraic incidence-loss validation.
-- Static and total pressure-ratio comparisons.
-
-The incidence coefficient is exploratory, not experimentally
-calibrated. The current cross-gas comparison uses separately
-calibrated blade angles.
-
-GPU execution remains planned rather than implemented.
-
-See [M1.6b.2 validation](docs/M1.6b2_VALIDATION.md)
-for the governing equations, results, limitations, and
-reproducibility instructions.
+The surrogate is meant to approximate compressor behavior cheaply inside larger studies. The physics solver remains the reference used to generate or check samples; the present model is not yet an experimentally validated compressor station.
 
 ## Current status
 
-**M1.4 complete: Validated nonlinear compressor solver
-and optimized CPU implementation.**
+The default branch contains substantial compressor and diffuser modeling, but the project has not reached either end-to-end goal:
 
-The current implementation supports:
+- **Pipeline coupling is not implemented.** The repository has flow-station and compressor operating-point types, but no demonstrated compressor-to-pipeline boundary component or coupled transient case.
+- **A trained ReLU surrogate is not implemented here.** The hackathon’s sample-based interpolation is the intended starting point; this repository can contribute physics-based samples, subject to its model limitations.
+- **GPU execution is not implemented.** Current solver and validation workflows are CPU based.
+- **Experimental compressor validation is pending.** The NASA HECC archive geometry and measurements were not obtained; the archived handoff records an HTTP 403.
 
-- Ideal-gas and Peng-Robinson thermodynamics.
-- Thermodynamic reference-invariant calculations.
-- Impeller meanline geometry and aerodynamics.
-- Mass, angular-momentum, and energy conservation.
-- Slip and entropy-generation closures.
-- Nonlinear operating-point solution.
-- Optimized thermodynamic residual evaluation.
-- Independent physical validation.
-- Deterministic failure diagnostics.
-- Reproducible CPU benchmarking.
+See [Project Status](docs/PROJECT_STATUS.md) for the evidence, limitations, and immediate work items, and the [Roadmap](docs/ROADMAP.md) for the two workstreams.
 
-GPU execution is planned but has not yet been implemented.
+## What is implemented
 
-## Performance
+- Ideal-gas and Peng–Robinson thermodynamics through ThermoGPU.
+- Impeller meanline aerodynamics, conservation equations, and nonlinear operating-point solving.
+- Compressor-map and operating-envelope calculations with continuation support.
+- Impeller and vaneless-diffuser complete-stage calculations, including frictional and variable-width diffuser formulations.
+- PCHIP infrastructure for diffuser hub and shroud profiles.
+- Incidence-loss experiments with independent algebraic checks.
 
-The optimized nonlinear solver achieves approximately
-**48–61x lower median execution time** than the original
-full-residual implementation across six benchmark operating
-conditions.
+The incidence study covers 105 paired operating points across three thermodynamic configurations and reports 315 successful nonlinear solutions. Its incidence coefficient is exploratory, not experimentally calibrated. The HECC geometry work provides infrastructure, not a NASA geometry reconstruction or experimental validation.
 
-Including independent physical validation, acceleration
-remains approximately **12–16x**.
+## Validation and performance
 
-Measurements were collected on an Intel Core i7-6920HQ
-using GCC 15.2.0 with -O3 optimization.
+The repository contains extensive numerical regression, manufactured-solution, convergence, sensitivity, and independent-residual checks. These establish numerical behavior for the tested cases; they do not establish a predictive surge boundary or experimental accuracy.
 
-| Thermodynamic model | Fast solve | Fast + validation |
-|---|---:|---:|
-| Ideal gas | 47.9–49.7x | 11.9–12.5x |
-| Peng-Robinson | 61.0–61.1x | 15.9x |
+The optimized CPU residual implementation was measured at roughly 48–61× lower median execution time than the original full-residual implementation on an Intel Core i7-6920HQ. Including independent validation, the reported reduction was about 12–16×. These are historical CPU comparisons, not GPU speedups or compressor-model accuracy claims.
 
-These are CPU wall-clock measurements, not GPU speedups.
+Milestone reports:
 
-See [M1.4 Validation](docs/M1.4_VALIDATION.md)
-for numerical results, methodology, limitations, and
-reproducibility information.
-
-## Numerical validation
-
-The M1.4 regression suite contains 26 CTest tests.
-
-Additional experiments include:
-
-- 54 thermodynamic reference-shifted solves.
-- 384 paired convergence-basin cases.
-- Deterministic coverage of all seven nonlinear
-  termination statuses.
-- Independent five-residual physical validation.
-
-The full and optimized solvers exhibited no convergence
-diagnostic disagreements in the tested convergence basin.
-
-## Dependencies
-
-- C++20 compiler.
-- CMake 3.20 or newer.
-- ThermoGPU 2.0.
-
-Python dependencies for benchmark analysis are listed in
-requirements.txt.
+- [M1.4 nonlinear solver validation](docs/M1.4_VALIDATION.md)
+- [M1.5 operating-envelope validation](docs/M1.5_VALIDATION.md)
+- [M1.6b.2 incidence validation](docs/M1.6b2_VALIDATION.md)
+- [Stage 9B HECC validation handoff](docs/STAGE9B_HECC_HANDOFF.md)
 
 ## Build
 
+Requirements: C++20 compiler, CMake 3.20+, and an installed ThermoGPU 2.0 package.
+
     cmake -S . -B build-cpu \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_PREFIX_PATH=/path/to/ThermoGPU/install
-
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_PREFIX_PATH=/path/to/ThermoGPU/install
     cmake --build build-cpu -j2
-
-## Test
-
     ctest --test-dir build-cpu --output-on-failure
+
+The exact test set depends on the configured build options. Consult CMake output and the milestone reports when comparing test counts.
 
 ## Benchmark
 
     ./build-cpu/turbocompgpu_nonlinear_wall_clock \
-        benchmarks/results-wall-clock/timings.csv \
-        1000 100
-
+      benchmarks/results-wall-clock/timings.csv 1000 100
     python benchmarks/analyze_wall_clock.py \
-        benchmarks/results-wall-clock/timings.csv
+      benchmarks/results-wall-clock/timings.csv
 
-## Roadmap
+## Project direction
 
-### Completed
+The immediate objective is a small, reviewable pipeline-coupling milestone, developed alongside a reproducible surrogate baseline:
 
-- Thermodynamic integration.
-- Impeller meanline modeling.
-- Conservation and entropy-loss closures.
-- Nonlinear operating-point solving.
-- Optimized CPU residual evaluation.
-- Numerical validation and benchmarking.
+- Define the compressor component inputs and outputs using consistent thermodynamic and flow conventions.
+- Demonstrate one compressor between pipe sections in a steady case, then in a transient case.
+- Reproduce and qualify the hackathon’s sample-based ReLU interpolation on held-out compressor operation.
+- Compare the surrogate against both the available sample source and the physics solver over a clearly defined domain.
 
-### Next: M1.5
-
-- Compressor operating-envelope exploration.
-- Mass-flow and rotational-speed sweeps.
-- Compressor performance-map generation.
-- Efficiency and pressure-ratio characterization.
-- Physical operating-limit investigation.
-
-### Future research
-
-- OpenMP and CUDA acceleration.
-- Batched GPU operating-point evaluation.
-- Geometry- and physics-informed compressor-map surrogates.
-- Adaptive sampling and sparse tensor-product interpolation.
-- Integration with transient pipeline simulation.
-
-See [Development Roadmap](docs/ROADMAP.md) for milestone details.
-
-## Development philosophy
-
-1. Establish a correct scalar numerical reference.
-2. Validate against analytical and independent references.
-3. Implement and differentially validate parallel backends.
-4. Characterize performance using reproducible benchmarks.
-
-## ThermoGPU
-
-TurboCompGPU builds upon:
-
-https://github.com/rdm375/ThermoGPU
+See the [Roadmap](docs/ROADMAP.md) for acceptance criteria and sequencing.
 
 ## License
 
 GPL-3.0-or-later.
-
-
-## M1.5 — Operating-envelope validation
-
-The M1.5 operating-envelope implementation evaluates centrifugal
-compressor operating points over deterministic mass-flow and
-rotational-speed grids.
-
-The validated experiment includes:
-
-- 70 operating conditions across IdealGas and PengRobinson models.
-- 140 nonlinear solves using independent and continuation initialization.
-- 140/140 converged solutions.
-- 140/140 independently validated solutions.
-- 140/140 solutions passing basic physical-consistency checks.
-- Continuation improvements at all 60 points with available history.
-- Eight operating-envelope visualizations.
-
-Continuation reduced mean Newton iterations by 34.78% for IdealGas
-and 42.45% for PengRobinson.
-
-These are numerical iteration reductions, not measured wall-clock
-speedups.
-
-Surge and choke limits remain unevaluated. The present model uses
-prescribed entropy generation rather than a predictive aerodynamic
-loss model.
-
-See [M1.5 validation](docs/M1.5_VALIDATION.md) for the complete
-experiment and reproducibility instructions.
-

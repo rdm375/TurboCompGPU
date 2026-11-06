@@ -1,176 +1,114 @@
 # TurboCompGPU Development Roadmap
 
-Status: Proposed roadmap, 2026-10-11
+Reviewed: 2026-11-06
+Code status reference: default branch main, latest commit acaa714 (2026-10-13)
 
-## Project direction
+## Project goals
 
-Develop a physically validated, high-performance centrifugal
-compressor modeling engine suitable for performance-map generation,
-accelerator execution, surrogate modeling, and eventual integration
-with transient pipeline simulation.
+The project has two intended outputs:
 
-Correctness and physical validity take precedence over acceleration.
+1. **Pipeline component:** a compressor model that can be connected to a transient pipe solver and participate in pipeline simulation.
+2. **Semi-realistic surrogate candidate:** a fast ReLU interpolant of sampled compressor operation, continuing the approach explored in the original NN Interpolation hackathon.
 
-## Phase 1 — Physical and numerical foundations
+These goals share data and interfaces, but they are not the same deliverable. The compressor physics solver is the reference model and possible sample generator. The surrogate is a fitted approximation with its own accuracy, domain, and validation requirements.
 
-| Milestone | Scope | Status |
+## Current status
+
+| Area | Status | Evidence and limitation |
 |---|---|---|
-| M1.0 | Project infrastructure | Complete |
-| M1.1 | ThermoGPU 2.0 integration | Complete |
-| M1.2 | Thermodynamic foundations | Complete |
-| M1.3 | Impeller aerodynamics and conservation | Complete |
-| M1.4 | Nonlinear solver, validation, optimization | Complete |
-| M1.5 | Operating-envelope exploration | Complete |
-| M1.6 | Compressor performance maps | Next |
-| M1.7 | Operating limits and validity boundaries | Planned |
-| M1.8 | Physical-model extensions and calibration | Planned |
+| Thermodynamics and nonlinear compressor solver | Implemented and numerically tested | IdealGas and PengRobinson paths, conservation checks, reference-invariance and solver validation |
+| Operating points and maps | Implemented for tested domains | Deterministic sweeps and continuation; tested convergence is not proof of physical admissibility |
+| Impeller/diffuser complete-stage model | Implemented with numerical verification | Frictional and variable-width diffuser work is documented; empirical calibration is still missing |
+| Incidence closure | Experimental model extension | 105 paired points across three thermodynamic configurations; coefficient not experimentally calibrated |
+| Diffuser profile geometry | Infrastructure present | PCHIP hub/shroud profiles and tests; actual NASA HECC hot-wall geometry is not reconstructed |
+| Pipeline coupling | **Not implemented** | No end-to-end compressor boundary connected to a transient pipe model |
+| ReLU surrogate | **Not implemented in this repository** | The hackathon approach is the intended baseline; no trained model, held-out qualification, or pipeline deployment is present |
+| GPU execution | **Not implemented** | Current code and reported timings are CPU based |
+| Experimental validation | **Pending** | NASA HECC archive access failed with HTTP 403 in the 2026-10-13 handoff |
 
-M1.4 and M1.5 numerical validation work is complete.
-See M1.4_VALIDATION.md and M1.5_VALIDATION.md for supporting evidence.
+For supporting details, see [Project Status](PROJECT_STATUS.md) and the linked milestone reports.
 
-## M1.5 — Operating-envelope exploration
+## Workstream A — Connect a compressor to a pipeline
 
-### M1.5a — Operating-point evaluation API
+### A0 — Define the component contract
 
-Create a reusable interface accepting a scenario parameter vector
-and returning:
+Use the existing flow-station and operating-point concepts to define a small, explicit component interface.
 
-- Outlet thermodynamic state.
-- Pressure ratio and specific work.
-- Shaft power and torque.
-- Entropy generation and defined efficiency metrics.
-- Nonlinear convergence diagnostics.
-- Physical-validity diagnostics.
+The contract should identify:
 
-The interface should be reusable by scalar, parallel, accelerator,
-adaptive-sampling, and transient-system workflows.
+- Inlet state and flow variables supplied by the pipe model.
+- Compressor controls and configuration, including rotational speed.
+- Outlet state and shaft-work or power outputs returned to the pipe/station model.
+- Solver status, diagnostics, and out-of-domain or invalid-state behavior.
+- The thermodynamic property model and static/total-state conventions at both boundaries.
 
-### M1.5b — Deterministic operating sweeps
+**Acceptance:** one documented API or adapter with unit tests for state conversion, mass-flow sign/convention, and energy consistency. Keep the interface independent of a GPU backend and avoid requiring a full station-control system in this first step.
 
-Sweep mass flow and rotational speed with fixed inlet conditions
-and geometry.
+### A1 — Steady pipe–compressor–pipe case
 
-Subsequently introduce inlet pressure and temperature variations.
+Place one compressor between upstream and downstream pipe sections. First establish a reproducible steady operating point and verify that the coupled pressure and flow agree with the component’s standalone result.
 
-Preserve complete numerical diagnostics and explicit failure states.
+**Acceptance:** a small deterministic example with convergence diagnostics and mass/energy balance checks at the component boundary.
 
-### M1.5c — Continuation methods
+### A2 — Transient single-compressor case
 
-Use neighboring converged states to initialize subsequent solves.
+Connect the same component to the transient pipe solver. Exercise a controlled change in demand or compressor speed and verify time-step behavior, coupling convergence, and conservation.
 
-Compare continuation against independent initialization.
+**Acceptance:** a documented transient case with repeatable results, explicit failure handling, and comparison against a tighter-coupling or refined-step reference.
 
-Measure convergence, iteration counts, robustness, and performance.
+### A3 — Station behavior only when needed
 
-Do not assume continuation detects all solution branches.
+Add parallel units, recycle/bypass, controls, and station-level operating logic only when the pipeline use case requires them. Keep those features distinct from the first single-compressor coupling.
 
-### M1.5d — Visualization and validation
+## Workstream B — Reproduce and qualify the ReLU interpolation idea
 
-Generate operating-envelope plots and machine-readable results.
+The original NN Interpolation hackathon used ReLU networks as interpolation functions over sampled compressor-operation input/output data. It treated the compressor simulator as a source of samples rather than requiring access to the simulator internals. Preserve that as the baseline method and record the provenance and units of every sample set.
 
-Verify conservation, reference invariance, reproducibility, and
-agreement with independently solved operating points.
+### B0 — Reconstruct the hackathon baseline
 
-### M1.5 completion criteria
+Inventory the available sample data, input/output definitions, preprocessing, network structure, and historical error measures. If the original data or code is unavailable, record that gap and recreate a minimal baseline from an explicitly identified sample source.
 
-- Reproducible operating sweeps.
-- Explicit distinction between convergence and physical validity.
-- Tested operating-point API.
-- Documented continuation behavior.
-- Saved numerical results and plots.
-- Passing regression suite.
+**Acceptance:** a reproducible training and holdout workflow with fixed data splits and metrics reported per output.
 
-## M1.6 — Compressor performance maps
+### B1 — Define a semi-realistic training domain
 
-Develop speed lines and performance-map outputs for:
+Use the physics-based compressor model to generate additional samples only within the model’s documented validity domain. Where legacy simulator samples exist, compare the two sources at matched conditions instead of silently treating either as experimental truth.
 
-- Pressure ratio.
-- Specific work and head.
-- Power and torque.
-- Efficiency under clearly defined conventions.
-- Entropy generation.
+Vary relevant operating inputs (for example inlet state, mass flow, and speed) while preserving geometry and gas composition metadata.
 
-Verify map values against the reference solver.
+**Acceptance:** a dataset manifest, domain coverage report, solver-failure counts, and a clear label for each source: legacy simulator, current physics model, or experiment.
 
-## M1.7 — Operating limits
+### B2 — Validate the interpolant
 
-Investigate:
+Compare held-out predictions against their sample source and against independent physics-solver evaluations. Report maximum, percentile, and RMS errors per output, boundary behavior, and out-of-domain behavior. Check physical consistency, including positive absolute pressure and nonnegative power where applicable.
 
-- Choking and compressibility constraints.
-- Surge-related indicators and model limitations.
-- Aerodynamic validity boundaries.
-- Nonlinear solution multiplicity and branch behavior.
+**Acceptance:** a qualified domain and explicit error gate chosen for the pipeline use case. Do not use random train/test splits alone when nearby operating points can leak across the split; hold out structured regions or complete speed lines as well.
 
-Do not equate nonlinear convergence with physical realizability.
-Do not claim predictive surge boundaries without suitable models
-and validation.
+### B3 — Use the surrogate in a pipeline case
 
-## M1.8 — Physical-model extensions
+Expose the surrogate through the same component contract as the reference solver. Compare coupled pipeline outputs against the reference-model coupling over the qualified domain.
 
-Investigate additional loss correlations, diffuser models,
-experimental comparison, and parameter calibration.
+**Acceptance:** repeatable pipeline-level comparisons and a defined response when queries leave the surrogate’s qualified domain.
 
-Separate numerical verification from experimental validation.
+## Model credibility work
 
-## Phase 2 — High-performance execution
+These items improve the reference model but do not block the first software integration prototype:
 
-| Milestone | Scope |
-|---|---|
-| M2.0 | Batched operating-point architecture |
-| M2.1 | Parallel CPU execution |
-| M2.2 | CUDA compressor solver |
-| M2.3 | CPU/GPU parity and performance validation |
+- Obtain and process the NASA HECC geometry and measurement archive; the 2026-10-13 handoff records an HTTP 403 and confirms those files were not downloaded.
+- Reconstruct actual hub/shroud geometry and compare diffuser predictions with experimental data.
+- Replace exploratory or prescribed loss closures with calibrated or independently supported models.
+- Establish operating validity limits. The current work does not provide a predictive surge boundary; distinguish solver convergence from physical admissibility.
+- Resolve the intentionally disabled test and record a fresh full regression result for the latest source tree.
 
-Measure actual batch throughput before committing to major
-accelerator optimizations.
+## Acceleration
 
-Retain the validated scalar implementation as the numerical oracle.
+Keep the validated scalar CPU model as the oracle. GPU or other accelerator work is a later implementation track, justified by measured pipeline or surrogate workload. No GPU solver is currently implemented, and past CPU timings must not be presented as GPU performance.
 
-## Phase 3 — Adaptive compressor-map surrogates
+## Working sequence
 
-| Milestone | Scope |
-|---|---|
-| M3.0 | TDAR-guided adaptive sampling |
-| M3.1 | Physics-informed coordinate transformations |
-| M3.2 | Mixed-basis sparse tensor-product interpolation |
-| M3.3 | Error estimation and surrogate validation |
-
-Prioritize compactly supported basis functions.
-
-Candidate one-dimensional families include hierarchical linear
-hats and cubic B-splines.
-
-Investigate corrected-flow and corrected-speed coordinates,
-as well as normalized operating-envelope coordinates.
-
-Evaluate automatic-differentiation-informed error estimators,
-adaptive sample efficiency, and accelerator execution.
-
-Compare surrogate outputs against the validated compressor solver.
-
-## Phase 4 — Transient-system integration
-
-| Milestone | Scope |
-|---|---|
-| M4.0 | Compressor and transient-pipeline integration |
-
-Investigate coupling compressor performance models to
-transient pipeline simulation.
-
-Preserve conservation and consistent thermodynamic conventions.
-
-## Development principles
-
-1. Establish physical and numerical correctness first.
-2. Preserve independent validation and regression tests.
-3. Distinguish solver failure from physical invalidity.
-4. Record provenance for numerical experiments.
-5. Benchmark complete workflows, not only isolated kernels.
-6. Maintain CPU reference behavior when adding accelerators.
-7. Prefer reusable interfaces over backend-specific duplication.
-
-## Roadmap status
-
-M1.5–M4.0 are proposed milestones and may be refined as research
-results emerge. Accelerator and surrogate development may proceed
-in parallel once suitable reference datasets exist.
+1. A0: define and test the component contract.
+2. B0: recover and document the hackathon data and baseline in parallel.
+3. A1: run one steady coupled pipeline case.
+4. B1–B2: build the semi-realistic data set and qualify the ReLU interpolant.
+5. A2 and B3: run transient comparisons with both reference model and surrogate.
+6. Pursue experimental validation and acceleration against identified use cases.
