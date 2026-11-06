@@ -22,7 +22,7 @@ These goals share data and interfaces, but they are not the same deliverable. Th
 | Incidence closure | Experimental model extension | 105 paired points across three thermodynamic configurations; coefficient not experimentally calibrated |
 | Diffuser profile geometry | Infrastructure present | PCHIP hub/shroud profiles and tests; actual NASA HECC hot-wall geometry is not reconstructed |
 | Pipeline coupling | **Not implemented** | No end-to-end compressor boundary connected to a transient pipe model |
-| ReLU surrogate | **Not implemented in this repository** | The hackathon approach is the intended baseline; no trained model, held-out qualification, or pipeline deployment is present |
+| ReLU surrogate | **Preliminary baseline added; not yet qualified** | A trainer fits current C++-generated samples; its structured holdout results have not yet been recorded, and it is not connected to the pipeline |
 | GPU execution | **Not implemented** | Current code and reported timings are CPU based |
 | Experimental validation | **Pending** | NASA HECC archive access failed with HTTP 403 in the 2026-10-13 handoff |
 
@@ -64,11 +64,11 @@ Add parallel units, recycle/bypass, controls, and station-level operating logic 
 
 The original NN Interpolation hackathon used ReLU networks as interpolation functions over sampled compressor-operation input/output data. It treated the compressor simulator as a source of samples rather than requiring access to the simulator internals. Preserve that as the baseline method and record the provenance and units of every sample set.
 
-### B0 — Reconstruct the hackathon baseline
+### B0 — Establish a model-generated ReLU baseline
 
-Inventory the available sample data, input/output definitions, preprocessing, network structure, and historical error measures. If the original data or code is unavailable, record that gap and recreate a minimal baseline from an explicitly identified sample source.
+The original hackathon artifacts are not currently available. Use the existing compressor-map samples to recreate the core ReLU interpolation method, while labeling the data as outputs of the current C++ model rather than legacy-simulator or experimental truth. The initial script is documented in RELU_SURROGATE_BASELINE.md.
 
-**Acceptance:** a reproducible training and holdout workflow with fixed data splits and metrics reported per output.
+**Acceptance:** run the training script, save its structured speed-line holdout metrics, and confirm that the model checkpoints can reproduce predictions from the report.
 
 ### B1 — Define a semi-realistic training domain
 
@@ -107,7 +107,7 @@ Keep the validated scalar CPU model as the oracle. GPU or other accelerator work
 ## Working sequence
 
 1. A0: define and test the component contract.
-2. B0: recover and document the hackathon data and baseline in parallel.
+2. B0: run and review the C++-sample ReLU baseline; recover legacy hackathon artifacts later if they become available.
 3. A1: run one steady coupled pipeline case.
 4. B1–B2: build the semi-realistic data set and qualify the ReLU interpolant.
 5. A2 and B3: run transient comparisons with both reference model and surrogate.

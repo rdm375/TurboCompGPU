@@ -13,7 +13,7 @@ The surrogate is meant to approximate compressor behavior cheaply inside larger 
 The default branch contains substantial compressor and diffuser modeling, but the project has not reached either end-to-end goal:
 
 - **Pipeline coupling is not implemented.** The repository has flow-station and compressor operating-point types, but no demonstrated compressor-to-pipeline boundary component or coupled transient case.
-- **A trained ReLU surrogate is not implemented here.** The hackathon’s sample-based interpolation is the intended starting point; this repository can contribute physics-based samples, subject to its model limitations.
+- **A preliminary ReLU surrogate baseline is now included.** It fits current C++-generated compressor-map samples; it does not reproduce the unavailable hackathon dataset and is not qualified for pipeline use.
 - **GPU execution is not implemented.** Current solver and validation workflows are CPU based.
 - **Experimental compressor validation is pending.** The NASA HECC archive geometry and measurements were not obtained; the archived handoff records an HTTP 403.
 
@@ -61,6 +61,18 @@ The exact test set depends on the configured build options. Consult CMake output
       benchmarks/results-wall-clock/timings.csv 1000 100
     python benchmarks/analyze_wall_clock.py \
       benchmarks/results-wall-clock/timings.csv
+
+## ReLU surrogate baseline
+
+A first training script uses the repository’s existing compressor-map CSV to fit separate ReLU networks for IdealGas and PengRobinson. It predicts total outlet temperature, total outlet pressure, and specific work from mass flow and speed under the benchmark’s fixed inlet and geometry conditions. The data contain 35 unique operating conditions per thermodynamic model; independent and continuation rows are deduplicated.
+
+Run it with:
+
+    python3 benchmarks/train_relu_surrogate.py \
+      benchmarks/results-compressor-map/map.csv \
+      --output-dir build/relu-surrogate
+
+This is a model-generated interpolation baseline, not an experimental or legacy-station surrogate. See [ReLU surrogate baseline](docs/RELU_SURROGATE_BASELINE.md) for the domain and structured speed-line holdout method.
 
 ## Project direction
 

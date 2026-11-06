@@ -2,7 +2,7 @@
 
 Reviewed: 2026-11-06
 Repository: [rdm375/TurboCompGPU](https://github.com/rdm375/TurboCompGPU), branch main
-Latest commit observed: acaa714, “Add verified PCHIP diffuser wall geometry and HECC handoff” (2026-10-13)
+Documentation baseline: 9d0f23d, “Clarify compressor project goals and status” (2026-11-06); this overlay adds the first surrogate trainer.
 
 ## Intended outcome
 
@@ -35,7 +35,7 @@ The Stage 9B handoff reports 69 enabled regression tests passing at its stated b
 |---|---|
 | End-to-end pipe/compressor/pipe example | Not present |
 | Transient compressor coupling and coupling convergence study | Not present |
-| Reproduction of the hackathon ReLU interpolant in this repo | Not present |
+| ReLU surrogate for current C++ map samples | Preliminary trainer added by this overlay; not yet run or qualified |
 | Qualified surrogate data set, held-out evaluation, and error gate | Not present |
 | Surrogate use through the pipeline component interface | Not present |
 | CUDA/GPU compressor solver | Not present |
@@ -58,11 +58,11 @@ The NASA HECC data archive was not available in the last recorded handoff (HTTP 
 
 ### Surrogate path
 
-1. Locate the hackathon’s sample data, code, and exact feature/target conventions.
-2. Reproduce its ReLU interpolation result with a fixed, structured holdout.
-3. Compare the legacy sample source with the C++ physics model at matched operating conditions.
-4. Add physics-model samples with clear provenance and documented validity limits.
-5. Qualify a surrogate over a stated domain before exposing it to the pipeline model.
+1. Run the new ReLU baseline on the existing compressor-map CSV and review the speed-line holdout metrics.
+2. Record model/data provenance and keep the fixed-condition domain explicit.
+3. Generate a denser structured grid if the baseline error is too high.
+4. Expand inputs only when the physics evaluator provides validated coverage for those conditions.
+5. Qualify the surrogate over a stated domain before exposing it to the pipeline model. The legacy hackathon files can be compared later if recovered.
 
 The two paths should share a component interface and test cases. The surrogate can then replace the reference evaluator only where its measured error and domain qualification are acceptable.
 

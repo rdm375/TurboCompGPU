@@ -1,0 +1,5 @@
+model_optimization_config(calibration, calibset_size=441)
+model_optimization_config(checker_cfg, policy=disabled)
+performance_param(compiler_optimization_level=max)
+post_quantization_optimization(bias_correction, policy=disabled)
+post_quantization_optimization(adaround, policy=disabled)
