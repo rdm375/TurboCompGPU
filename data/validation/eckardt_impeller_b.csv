@@ -1,0 +1,22 @@
+# Eckardt rotor B total-to-total pressure ratio map.
+# Source: Bayomi et al. (2013), Table 5, “Centrifugal Compressor Map Prediction and Modification”.
+# Values are transcribed from the table; flow in kg/s, speed in rpm.
+# Geometry source: Meroni et al. (2018), Table 5, DOI 10.1016/j.apenergy.2018.09.210.
+# This is a distinct rotor from Eckardt A but belongs to the same experimental family.
+10000,2.315,1.359
+10000,2.675,1.359
+10000,3.135,1.328
+10000,3.675,1.281
+10000,4.270,1.250
+12000,2.869,1.531
+12000,3.391,1.531
+12000,3.913,1.484
+12000,4.521,1.421
+14000,3.304,1.750
+14000,3.913,1.750
+14000,4.521,1.718
+14000,5.086,1.656
+16000,3.695,2.031
+16000,4.260,2.000
+16000,4.826,1.984
+16000,5.391,1.938

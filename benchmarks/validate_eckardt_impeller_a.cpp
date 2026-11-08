@@ -53,8 +53,28 @@ std::vector<MapPoint> read_map(const std::filesystem::path& path)
     return points;
 }
 
-ImpellerSystemGeometry geometry()
+ImpellerSystemGeometry geometry(bool rotor_b = false)
 {
+    if (rotor_b) {
+        // Eckardt B geometry from Meroni et al., Table 5. The inlet
+        // representative diameter is the RMS diameter of the hub/shroud
+        // annulus; the model uses a circular-equivalent inlet area.
+        constexpr double exit_diameter_m = 0.400;
+        constexpr double exit_width_m = 0.026;
+        constexpr double blade_count = 20.0;
+        constexpr double exit_blade_thickness_m = 0.00108;
+        constexpr double exit_blockage = blade_count * exit_blade_thickness_m /
+            (2.0 * std::numbers::pi * (exit_diameter_m / 2.0));
+        constexpr double inlet_hub_radius_m = 0.0959;
+        constexpr double inlet_shroud_radius_m = 0.140;
+        return {
+            {2.0 * inlet_hub_radius_m, 2.0 * inlet_shroud_radius_m, 0.0},
+            {exit_diameter_m, exit_width_m, exit_blockage},
+            {exit_diameter_m, 50.0,
+             2.0 * std::sqrt(0.5 * (inlet_hub_radius_m * inlet_hub_radius_m +
+                                      inlet_shroud_radius_m * inlet_shroud_radius_m))}
+        };
+    }
     // Eckardt A dimensions transcribed from the public MATLAB model by
     // Guido Fratte. The inlet radii and inlet diameter below use a circular
     // area-equivalent approximation for the annulus; they are not a full
@@ -85,7 +105,8 @@ OperatingPointRequest request(
     const MapPoint& point,
     const thermomodel::IdealGas& air,
     const ImpellerSystemGeometry& g,
-    std::optional<double> slip_override)
+    std::optional<double> slip_override,
+    bool rotor_b = false)
 {
     // The reference experiment reports total inlet conditions. Convert that
     // state to a static state and inlet velocity on the subsonic ideal-gas
@@ -119,10 +140,9 @@ OperatingPointRequest request(
     const double inlet_pressure_pa = inlet_total_pressure_pa *
         std::pow(inlet_temperature_k / inlet_total_temperature_k,
                  gamma / (gamma - 1.0));
-    // Mapping the author's beta2=-30 deg convention to TurboCompGPU's
-    // positive convention gives beta=60 deg. Apply the author's slip
-    // correlation for N=20 blades as a documented first-pass estimate.
-    constexpr double beta_author_deg = 30.0;
+    // Map the author's negative-angle convention to TurboCompGPU's
+    // positive convention, and use the matching B or A slip-correlation angle.
+    const double beta_author_deg = rotor_b ? 40.0 : 30.0;
     constexpr double blades = 20.0;
     const double correlation_slip = 1.0 -
         std::sqrt(std::cos(beta_author_deg * std::numbers::pi / 180.0)) /
@@ -193,12 +213,13 @@ int main(int argc, char** argv)
         const std::filesystem::path output_path = argc > 2
             ? argv[2]
             : "benchmarks/results-eckardt-impeller-a/qualification.csv";
-        const std::optional<double> slip_override = argc > 3
+        const std::optional<double> slip_override = argc > 3 && argv[3][0] != '\0'
             ? std::optional<double>(std::stod(argv[3]))
             : std::nullopt;
+        const bool rotor_b = argc > 4 && std::string(argv[4]) == "B";
 
         const auto points = read_map(input_path);
-        const auto g = geometry();
+        const auto g = geometry(rotor_b);
         const auto s = scales();
         const thermomodel::IdealGas air;
 
@@ -220,11 +241,11 @@ int main(int argc, char** argv)
         constexpr double nan = std::numeric_limits<double>::quiet_NaN();
 
         for (const auto& point : points) {
-            const auto op = request(point, air, g, slip_override);
+            const auto op = request(point, air, g, slip_override, rotor_b);
             const auto result = evaluate_complete_stage(
                 air, air, g,
                 {g.exit.diameter / 2.0,
-                 2.69 * g.exit.diameter / 2.0,
+                 (rotor_b ? 3.69 : 2.69) * g.exit.diameter / 2.0,
                  0.51 * g.exit.width, 0.0},
                 op, s, options());
 
@@ -269,7 +290,8 @@ int main(int argc, char** argv)
                           << '\n';
         }
 
-        std::cout << "\nEckardt A points=" << points.size()
+        std::cout << "\nEckardt " << (rotor_b ? "B" : "A")
+                  << " points=" << points.size()
                   << " complete=" << complete
                   << " failed=" << points.size() - complete;
         if (complete > 0)

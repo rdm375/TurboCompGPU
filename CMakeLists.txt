@@ -1326,6 +1326,20 @@ target_link_libraries(
     PRIVATE turbocompgpu
 )
 
+if(BUILD_TESTING)
+    add_test(
+        NAME eckardt_b_external_map_screen
+        COMMAND turbocompgpu_validate_eckardt_impeller_a
+            "${CMAKE_CURRENT_SOURCE_DIR}/data/validation/eckardt_impeller_b.csv"
+            "${CMAKE_CURRENT_BINARY_DIR}/eckardt_b_qualification.csv"
+            "" B
+    )
+    set_tests_properties(
+        eckardt_b_external_map_screen
+        PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+endif()
+
 add_executable(
     turbocompgpu_eckardt_diffuser_friction_sweep
     benchmarks/eckardt_diffuser_friction_sweep.cpp
