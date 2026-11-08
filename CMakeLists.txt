@@ -1316,6 +1316,25 @@ target_link_libraries(
     PRIVATE turbocompgpu
 )
 
+# External-data screening comparison for Eckardt Impeller A.
+add_executable(
+    turbocompgpu_validate_eckardt_impeller_a
+    benchmarks/validate_eckardt_impeller_a.cpp
+)
+target_link_libraries(
+    turbocompgpu_validate_eckardt_impeller_a
+    PRIVATE turbocompgpu
+)
+
+add_executable(
+    turbocompgpu_eckardt_diffuser_friction_sweep
+    benchmarks/eckardt_diffuser_friction_sweep.cpp
+)
+target_link_libraries(
+    turbocompgpu_eckardt_diffuser_friction_sweep
+    PRIVATE turbocompgpu
+)
+
 # Stage 8B.5b.2: coupled operating-envelope boundaries.
 add_executable(
     turbocompgpu_complete_stage_boundaries
@@ -1543,4 +1562,64 @@ if(BUILD_TESTING)
         NAME diffuser_wall_geometry
         COMMAND turbocompgpu_diffuser_wall_geometry
     )
+endif()
+
+
+# A0-A3: compressor/pipeline contract, controls, and recycle integration tests.
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_pipeline_control_test
+        tests/pipeline_control.cpp
+    )
+    target_link_libraries(
+        turbocompgpu_pipeline_control_test
+        PRIVATE turbocompgpu
+    )
+    add_test(
+        NAME pipeline_compressor_control
+        COMMAND turbocompgpu_pipeline_control_test
+    )
+endif()
+
+# Optional end-to-end one-step coupling against the native C++ pipe solver.
+# Set this to a checkout of transient-pipe-flow to enable the integration
+# target; the compressor-only build remains independent of that repository.
+set(TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR "" CACHE PATH
+    "Path to a transient-pipe-flow checkout for coupled integration tests")
+if(BUILD_TESTING AND TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR)
+    if(NOT EXISTS "${TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR}/CMakeLists.txt")
+        message(FATAL_ERROR
+            "TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR must contain CMakeLists.txt")
+    endif()
+    set(_pipe_sim_cpp_dir "${TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR}/src/cpp")
+    foreach(_pipe_source IN ITEMS
+            physics.cpp residual.cpp jacobian.cpp banded_solver.cpp
+            newton.cpp transient_step.cpp)
+        if(NOT EXISTS "${_pipe_sim_cpp_dir}/${_pipe_source}")
+            message(FATAL_ERROR
+                "The selected transient-pipe-flow checkout is missing "
+                "src/cpp/${_pipe_source}")
+        endif()
+    endforeach()
+
+    add_library(turbocompgpu_pipe_sim_coupling STATIC
+        "${_pipe_sim_cpp_dir}/physics.cpp"
+        "${_pipe_sim_cpp_dir}/residual.cpp"
+        "${_pipe_sim_cpp_dir}/jacobian.cpp"
+        "${_pipe_sim_cpp_dir}/banded_solver.cpp"
+        "${_pipe_sim_cpp_dir}/newton.cpp"
+        "${_pipe_sim_cpp_dir}/transient_step.cpp")
+    target_include_directories(turbocompgpu_pipe_sim_coupling
+        PUBLIC "${TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR}/include")
+    target_compile_features(turbocompgpu_pipe_sim_coupling PUBLIC cxx_std_20)
+
+    add_executable(
+        turbocompgpu_two_pipe_compressor_coupling_test
+        tests/two_pipe_compressor_coupling.cpp)
+    target_link_libraries(
+        turbocompgpu_two_pipe_compressor_coupling_test
+        PRIVATE turbocompgpu turbocompgpu_pipe_sim_coupling)
+    add_test(
+        NAME two_pipe_compressor_coupling
+        COMMAND turbocompgpu_two_pipe_compressor_coupling_test)
 endif()

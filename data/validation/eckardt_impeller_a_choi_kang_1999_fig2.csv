@@ -1,0 +1,11 @@
+# Source: Choi and Kang, Int. J. Rotating Machinery 5(1), 17-33 (1999), Fig. 2.
+# DOI: 10.1155/S1023621X99000020. Experimental Eckardt backswept Impeller A data.
+# Digitized approximate values from the plotted Eckardt experimental symbols;
+# use uncertainty of about +/-0.015 in pressure ratio, temperature coefficient,
+# and efficiency. m_opt=4.54 kg/s, N=14000 rpm.
+# Pressure ratio uses total pressure at r/r2=1.075; total-temperature rise uses
+# T0 at r/r2=1.687; efficiency is reported from these mixed measurement planes.
+# Columns: normalized_flow_ratio,mass_flow_kg_s,measured_total_pressure_ratio_r1_075,measured_cp_dT_over_U2sq_r1_687,measured_mixed_plane_efficiency
+0.75,3.405,2.01,0.805,0.920
+1.00,4.540,1.96,0.765,0.930
+1.50,6.810,1.68,0.655,0.805

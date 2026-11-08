@@ -2,9 +2,50 @@
 
 This experiment uses the PengRobinson complete-stage map, the mass-flow coordinates selected by the paired coordinate ablation, and one shared `2 -> 64 -> 64 -> 32 -> 3` ReLU MLP. The Hailo-10H is an inference accelerator (NPU); it uses the same ONNX model compiled to HEF. The exporter emits ONNX, PyTorch weights, and NumPy reference weights. Hailo host-side decoding applies `exp(z * target_log_std + target_log_mean)` after inference.
 
-The model's training-fit metrics are not independent validation. Use the leave-one-speed-line-out results in `build/relu-surrogate/coordinate-ablation/coordinate_ablation_report.json` as the generalization reference. The Hailo validator measures quantization deviation on supplied direct-stage rows.
+The model's training-fit metrics are not independent validation. The earlier coordinate-ablation report evaluates a different training experiment and is not the qualification report for this hardware candidate. Use the independent held-out-speed-line qualification below for this exported architecture. The Hailo validator measures quantization deviation on supplied direct-stage rows; that measures quantization error, not speed-line generalization.
 
 Scope: this measures the three stage responses on the supplied valid sample domain. It does not yet interpolate the boundary curves at arbitrary speed or reject out-of-envelope runtime queries; keep those checks in the surrounding operating-envelope logic.
+
+## Independent held-out-speed-line qualification
+
+Training metrics and the Hailo comparison above do not establish speed-line
+generalization. This independent leave-one-complete-speed-line-out workflow
+fits a fresh copy of the same `2 -> 64 -> 64 -> 32 -> 3` network per fold.
+It excludes the held-out line from training and from input and target scaling.
+The endpoint folds measure speed extrapolation; interior folds measure speed
+interpolation. Per-row predictions and per-speed/aggregate metrics are saved.
+
+Run on the Dell 7710 with the CPU PyTorch environment:
+
+```bash
+cd ~/Sync/TurboCompGPU
+. .venv/bin/activate
+python benchmarks/surrogate/qualify_stage_surrogate.py \
+  build/relu-surrogate/complete-stage-boundary-grid/benchmarks/results-complete-stage-characteristic/complete-stage-boundary-grid.csv \
+  --model PengRobinson \
+  --output-dir build/relu-surrogate/stage-speedline-qualification \
+  --cpu-threads 2
+```
+
+For Slurm on the 7710:
+
+```bash
+cd ~/Sync/TurboCompGPU
+PROJECT="$HOME/Sync/TurboCompGPU"
+mkdir -p "$PROJECT/build/relu-surrogate/slurm-logs"
+sbatch --nodelist=dell7710 --partition=compute --chdir="$PROJECT" \
+  --cpus-per-task=2 --mem=4G --time=00:30:00 \
+  --output="$PROJECT/build/relu-surrogate/slurm-logs/qualify-%j.out" \
+  --error="$PROJECT/build/relu-surrogate/slurm-logs/qualify-%j.err" \
+  --wrap='. .venv/bin/activate && python benchmarks/surrogate/qualify_stage_surrogate.py build/relu-surrogate/complete-stage-boundary-grid/benchmarks/results-complete-stage-characteristic/complete-stage-boundary-grid.csv --model PengRobinson --output-dir build/relu-surrogate/stage-speedline-qualification --cpu-threads "$SLURM_CPUS_PER_TASK"'
+```
+
+Outputs are `qualification_report.json` and
+`held_out_speedline_predictions.csv`. Review interior and edge
+metrics separately before using the candidate in the pipeline component. This
+only establishes approximation of this numerical model over the sampled
+fixed-setup domain; it does not establish experimental accuracy or validity
+for other compressor inputs.
 
 ## Train and export on the 7710
 

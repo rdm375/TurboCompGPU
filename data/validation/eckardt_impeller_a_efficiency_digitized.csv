@@ -1,0 +1,25 @@
+# Source: Meroni et al. (2018), Figure 6(d), Eckardt Impeller A measured symbols.
+# Approximate plot digitization from the DTU peer-reviewed postprint PDF, panel axes.
+# Columns: rotational_speed_rpm,mass_flow_kg_s,measured_total_to_total_efficiency
+# Digitization is approximate (about +/-0.01 absolute eta); no raw table was found.
+10000,2.34,0.847
+10000,2.61,0.865
+10000,3.11,0.885
+10000,3.71,0.882
+10000,4.28,0.834
+10000,4.91,0.828
+12000,2.86,0.842
+12000,3.42,0.871
+12000,3.99,0.879
+12000,4.54,0.874
+12000,5.11,0.803
+14000,3.30,0.831
+14000,3.99,0.865
+14000,4.56,0.877
+14000,5.11,0.890
+14000,5.69,0.742
+16000,3.76,0.817
+16000,4.31,0.840
+16000,4.88,0.857
+16000,5.44,0.859
+16000,6.00,0.655

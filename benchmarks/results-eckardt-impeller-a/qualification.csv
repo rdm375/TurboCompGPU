@@ -1,0 +1,18 @@
+rpm,mass_flow_kg_s,slip_factor,measured_total_pressure_ratio,predicted_total_pressure_ratio,predicted_impeller_total_pressure_ratio,diffuser_total_pressure_ratio,relative_error_percent,stage_complete,message
+10000,2.5,0.885700503081,1.4376,1.45959571376,1.45959571376,1,1.53003017277,1,Complete-stage solution converged and validated
+10000,3.1,0.885700503081,1.4064,1.43460279995,1.43460279995,1,2.00531854001,1,Complete-stage solution converged and validated
+10000,3.8,0.885700503081,1.3908,1.39483093483,1.39483093483,1,0.289828503892,1,Complete-stage solution converged and validated
+10000,4.6,0.885700503081,1.3596,1.35618987045,1.35618987045,1,-0.250818590232,1,Complete-stage solution converged and validated
+10000,5,0.885700503081,1.328,1.33869388091,1.33869388091,1,0.805262116641,1,Complete-stage solution converged and validated
+12000,3,0.885700503081,1.665,1.71316724533,1.71316724533,1,2.89292764716,1,Complete-stage solution converged and validated
+12000,3.8,0.885700503081,1.635,1.63563015448,1.63563015448,1,0.0385415586079,1,Complete-stage solution converged and validated
+12000,4.4,0.885700503081,1.59,1.58353745048,1.58353745048,1,-0.406449655414,1,Complete-stage solution converged and validated
+12000,5.2,0.885700503081,1.56,1.5212189393,1.5212189393,1,-2.48596542957,1,Complete-stage solution converged and validated
+14000,3.5,0.885700503081,1.94,2.00981023595,2.00981023595,1,3.59846577074,1,Complete-stage solution converged and validated
+14000,4.5,0.885700503081,1.925,1.86470082326,1.86470082326,1,-3.13242476562,1,Complete-stage solution converged and validated
+14000,5.3,0.885700503081,1.88,1.76380578375,1.76380578375,1,-6.18054341777,1,Complete-stage solution converged and validated
+14000,6.1,0.885700503081,1.805,1.67461058701,1.67461058701,1,-7.2237901931,1,Complete-stage solution converged and validated
+16000,4.2,0.885700503081,2.305,2.31368743379,2.31368743379,1,0.376895175389,1,Complete-stage solution converged and validated
+16000,5.2,0.885700503081,2.26,2.10996587016,2.10996587016,1,-6.63867831147,1,Complete-stage solution converged and validated
+16000,6,0.885700503081,2.2,1.96999613234,1.96999613234,1,-10.4547212574,1,Complete-stage solution converged and validated
+16000,6.8,0.885700503081,2.08,1.84855733364,1.84855733364,1,-11.1270512673,1,Complete-stage solution converged and validated

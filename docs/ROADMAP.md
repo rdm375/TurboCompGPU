@@ -1,7 +1,7 @@
 # TurboCompGPU Development Roadmap
 
 Reviewed: 2026-11-06
-Code status reference: default branch main, latest commit acaa714 (2026-10-13)
+Code status reference: default branch main, latest commit bcb7b89 (2026-11-06)
 
 ## Project goals
 
@@ -21,6 +21,10 @@ These goals share data and interfaces, but they are not the same deliverable. Th
 | Impeller/diffuser complete-stage model | Implemented with numerical verification | Frictional and variable-width diffuser work is documented; empirical calibration is still missing |
 | Incidence closure | Experimental model extension | 105 paired points across three thermodynamic configurations; coefficient not experimentally calibrated |
 | Diffuser profile geometry | Infrastructure present | PCHIP hub/shroud profiles and tests; actual NASA HECC hot-wall geometry is not reconstructed |
+| Operator control modes | **Defined at interface level; integration pending** | Pressure, net-flow, and manual-speed modes need a plant/pipeline response and tuned gains |
+| Variable guide vanes | **Not modeled** | No guide-vane position input or vane-dependent operating map |
+| Recycle flow | **Not modeled** | No recycle branch, valve flow law, suction mixing/cooling, or exported-flow/through-flow accounting |
+| Surge map and margin | **Unavailable** | Solver convergence does not predict surge; anti-surge needs an independently qualified map |
 | Pipeline coupling | **Not implemented** | No end-to-end compressor boundary connected to a transient pipe model |
 | ReLU surrogate | **Preliminary baseline added; not yet qualified** | A trainer fits current C++-generated samples; its structured holdout results have not yet been recorded, and it is not connected to the pipeline |
 | GPU execution | **Not implemented** | Current code and reported timings are CPU based |
@@ -30,35 +34,124 @@ For supporting details, see [Project Status](PROJECT_STATUS.md) and the linked m
 
 ## Workstream A — Connect a compressor to a pipeline
 
-### A0 — Define the component contract
+The operator selects a primary process objective; the control layer changes a
+machine actuator to pursue it. The network determines the resulting pressure
+and flow together with the compressor. A compressor operating-point solver
+alone cannot close this loop.
 
-Use the existing flow-station and operating-point concepts to define a small, explicit component interface.
+### A0 — Freeze the unit and pipeline-port contract
 
-The contract should identify:
+Specify inlet and outlet measurement locations, pressure conventions, mass-flow
+signs, thermodynamic states, control modes, actuator limits, and failure
+behavior. Distinguish:
 
-- Inlet state and flow variables supplied by the pipe model.
-- Compressor controls and configuration, including rotational speed.
-- Outlet state and shaft-work or power outputs returned to the pipe/station model.
-- Solver status, diagnostics, and out-of-domain or invalid-state behavior.
-- The thermodynamic property model and static/total-state conventions at both boundaries.
+- **Pipeline export flow:** net flow delivered downstream; this is the
+  measurement for a station flow setpoint.
+- **Compressor through-flow:** flow through the impeller and diffuser; this is
+  the mass flow supplied to the compressor physics model.
+- **Recycle flow:** gas diverted from compressor discharge back to suction.
+  With recycle, compressor through-flow exceeds pipeline export flow.
 
-**Acceptance:** one documented API or adapter with unit tests for state conversion, mass-flow sign/convention, and energy consistency. Keep the interface independent of a GPU backend and avoid requiring a full station-control system in this first step.
+Use static pressure at defined pipe taps for control feedback. Keep those
+sensor values distinct from total pressures returned by compressor-map
+postprocessing.
 
-### A1 — Steady pipe–compressor–pipe case
+**Acceptance:** a documented component/control data contract with units,
+measurement locations, flow sign, thermodynamic state convention, actuator
+configuration, and explicit invalid/out-of-domain behavior.
 
-Place one compressor between upstream and downstream pipe sections. First establish a reproducible steady operating point and verify that the coupled pressure and flow agree with the component’s standalone result.
+### A1 — Couple a variable-speed compressor in steady operation
 
-**Acceptance:** a small deterministic example with convergence diagnostics and mass/energy balance checks at the component boundary.
+Connect the compressor between upstream and downstream pipe sections. Use the
+network solution to determine mass flow and boundary pressures. Implement
+discharge-pressure, suction-pressure, and pipeline-export-flow control modes;
+the controller adjusts shaft speed within driver and compressor limits.
+Manual-speed mode remains available for fixed-command studies.
 
-### A2 — Transient single-compressor case
+**Acceptance:** one deterministic steady pipe–compressor–pipe case for each
+automatic setpoint mode; mass and energy close at the component boundary;
+setpoints track when feasible; saturated commands report that the target is
+unreachable within the configured speed/power envelope.
 
-Connect the same component to the transient pipe solver. Exercise a controlled change in demand or compressor speed and verify time-step behavior, coupling convergence, and conservation.
+### A2 — Add guide-vane actuation to the physical model
 
-**Acceptance:** a documented transient case with repeatable results, explicit failure handling, and comparison against a tighter-coupling or refined-step reference.
+Where the selected machine has variable inlet guide vanes (IGVs), add vane
+position as an explicit operating input. Model vane-induced prewhirl and the
+associated inlet flow/incidence and loss changes using available design or
+manufacturer data. Do not treat an arbitrary prewhirl value as an IGV model
+without establishing that relationship.
 
-### A3 — Station behavior only when needed
+Generate and validate operating maps across speed and vane position. Retain a
+fixed-vane configuration for machines without IGVs.
 
-Add parallel units, recycle/bypass, controls, and station-level operating logic only when the pipeline use case requires them. Keep those features distinct from the first single-compressor coupling.
+**Acceptance:** vane end stops and invalid positions are handled; the fixed-vane
+case recovers the existing model; representative vane/speed points agree with
+independent machine data or are clearly labeled as model-only qualification.
+
+### A3 — Model recycle flow and its thermodynamics
+
+Add a discharge-to-suction recycle branch with a valve-opening-to-flow
+relationship, line pressure losses, and any cooler used by the station.
+At suction, mix fresh pipeline gas with cooled recycle using mass and energy
+balances. Feed the mixed suction state and total compressor through-flow to
+the compressor solver. Return net pipeline export flow separately.
+
+**Acceptance:** zero valve opening recovers the non-recycle case; recycle mass
+and energy balances close; flow tends to zero when the valve is closed; valve
+limits and pressure-ratio limits are explicit; a pressure/flow controller uses
+net export flow while compressor maps use internal through-flow.
+
+### A4 — Obtain and qualify a surge-limit map
+
+The current solver does not predict rotating stall or surge. Obtain a
+speed-dependent surge line from manufacturer performance data, commissioning
+tests, or other independently validated source. Include IGV position and gas
+correction where the source requires them. Define the corrected flow/head
+coordinates, surge margin, uncertainty, interpolation range, and behavior
+outside that range. Keep choke and driver limits distinct from the surge line.
+
+Do not infer a surge limit from solver convergence or from the current 441-row
+training grid alone.
+
+**Acceptance:** source and units are recorded; map interpolation is checked
+against withheld map points; every supported query has a bounded margin and
+uncertainty; out-of-map queries return an explicit unavailable/invalid result.
+Until this gate passes, anti-surge control remains unavailable.
+
+### A5 — Integrate anti-surge override and operating limits
+
+Use the qualified margin provider as a separate fast protection loop. It opens
+the recycle valve as the operating point approaches the configured control
+line, with suitable margin, rate limits, and actuator response. Anti-surge
+action takes priority over the normal pressure/flow objective. Add explicit
+driver speed and power limits, maximum discharge pressure, and discharge
+temperature limits from the selected unit and downstream pipeline
+specification. Treat shutdown trips as separate protection logic.
+
+**Acceptance:** disturbance and setpoint-change scenarios preserve the
+qualified surge margin; override priority, valve travel/rate limits, saturation,
+and missing-map behavior are exercised; primary-loop windup is controlled
+during override. No test may claim surge protection with an absent or
+out-of-domain map.
+
+### A6 — Validate transient pipe–compressor–controller coupling
+
+Run the same unit with the pipe solver in transient operation. Define the
+controller sample period, actuator lag/ramp response, and whether the
+compressor is modeled quasi-steadily at each pipe time step. Exercise changes
+in demand, pressure setpoint, speed/IGV, and recycle action. Compare time-step
+refinement and coupling iteration.
+
+**Acceptance:** repeatable transient traces report pressure/flow tracking,
+speed and valve commands, surge margin when qualified, mass/energy residuals,
+controller saturation, and solver failures. The steady case remains a
+regression reference.
+
+### A7 — Expand to station behavior only after the single unit
+
+Add parallel-unit load sharing, unit starts/stops, bypasses, and station
+dispatch only when the single-compressor coupling is stable. Keep station
+dispatch separate from the unit-level pressure/flow and anti-surge loops.
 
 ## Workstream B — Reproduce and qualify the ReLU interpolation idea
 
@@ -106,9 +199,16 @@ Keep the validated scalar CPU model as the oracle. GPU or other accelerator work
 
 ## Working sequence
 
-1. A0: define and test the component contract.
-2. B0: run and review the C++-sample ReLU baseline; recover legacy hackathon artifacts later if they become available.
-3. A1: run one steady coupled pipeline case.
-4. B1–B2: build the semi-realistic data set and qualify the ReLU interpolant.
-5. A2 and B3: run transient comparisons with both reference model and surrogate.
-6. Pursue experimental validation and acceleration against identified use cases.
+1. A0: freeze the port, flow, sensor, and control contract.
+2. A1: demonstrate steady variable-speed pressure and net-flow control.
+3. B0: run the ReLU baseline and independent held-out-speed-line qualification.
+4. A2: add guide-vane physics and speed/vane maps for the selected machine.
+5. A3: add the recycle branch with suction mixing and exported-flow accounting.
+6. A4: obtain and qualify an independent surge map; anti-surge stays disabled
+   until this gate passes.
+7. A5: integrate the anti-surge override and unit/pipeline operating limits.
+8. A6: run transient pipe–compressor–controller comparisons with refinement.
+9. B1–B3: expand, qualify, and compare the surrogate through the same
+   component contract.
+10. A7: add station-level multiple-unit dispatch if the use case requires it.
+11. Pursue experimental validation and acceleration against identified needs.

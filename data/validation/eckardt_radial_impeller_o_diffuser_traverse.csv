@@ -1,0 +1,11 @@
+# Source: D. Japikse, ASME 85-GT-73 (1985), Table 4; radial-discharge Eckardt Impeller O, 14,000 rpm.
+# Not backswept Impeller A; do not use these rows to qualify the A model.
+# Table 4 reports traverse-integrated mass-average values. The 1.075 station has P04 and angle;
+# the 1.6875 station has static P5 and total P05. Pressure units are Pa; angles are degrees.
+rpm,orifice_mass_flow_kg_s,traverse_mass_flow_kg_s,impeller_exit_static_pressure_pa,near_total_pressure_pa,near_flow_angle_from_meridional_deg,far_static_pressure_pa,far_total_pressure_pa,collector_total_temperature_k
+14000,4.05,4.17,147871,218529,71.4,189680,208477,363.7
+14000,4.54,4.56,147618,220124,69.5,190956,209802,363.8
+14000,5.32,5.26,145054,220658,66.3,190703,210558,363.6
+14000,6.09,6.01,140139,218840,62.9,187461,207903,362.9
+14000,7.02,6.91,131729,215958,58.8,181979,203633,362.3
+14000,8.02,7.51,114787,203659,53.8,170184,195416,362.6
