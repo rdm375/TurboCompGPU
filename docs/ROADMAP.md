@@ -1,7 +1,7 @@
 # TurboCompGPU Development Roadmap
 
 Reviewed: 2026-11-09
-Code status reference: default branch main, latest reviewed commit df8cc301fadbeb891a97d87e83c5585563155556
+Code status reference: default branch main, latest reviewed code commit 3980363d090d3b532cf50d437f8b90cfc9a0fa21
 
 ## Project goals
 
@@ -33,6 +33,11 @@ These goals share data and interfaces, but they are not the same deliverable. Th
 For supporting details, see [Project Status](PROJECT_STATUS.md) and the linked milestone reports.
 The current held-out-surrogate, transient-test, and physical-data acquisition
 record is in [Project gap-close data and run record](PROJECT_GAP_CLOSE_2026-11.md).
+
+The active priority is component-wise validation of the numerical compressor
+model. See [Numerical model validation](NUMERICAL_MODEL_VALIDATION.md) for the
+campaign and evidence boundaries. Surrogate qualification is deferred until
+the numerical reference model's evidence and validity domain are reviewed.
 
 ## Workstream A — Connect a compressor to a pipeline
 
@@ -207,13 +212,32 @@ Expose the surrogate through the same component contract as the reference solver
 
 ## Model credibility work
 
-These items improve the reference model but do not block the first software integration prototype:
+This pass focuses on the numerical compressor model. Keep these claims
+distinct:
 
-- Obtain and process the NASA HECC geometry and measurement archive; the 2026-10-13 handoff records an HTTP 403 and confirms those files were not downloaded.
-- Reconstruct actual hub/shroud geometry and compare diffuser predictions with experimental data.
-- Replace exploratory or prescribed loss closures with calibrated or independently supported models.
-- Establish operating validity limits. The current work does not provide a predictive surge boundary; distinguish solver convergence from physical admissibility.
-- Resolve the intentionally disabled test and record a fresh full regression result for the latest source tree.
+- Numerical verification checks equations, derivatives, conservation,
+  independent formulations, tolerances, and solver failure behavior.
+- Component validation compares the same measured quantity at matched
+  operating conditions and measurement planes.
+- Calibration fits declared training data; validation scores untouched data.
+- Pipe integration checks network closure and transient behavior, but does not
+  establish compressor accuracy against a test rig.
+
+The current evidence does not include a geometry-complete independent
+full-stage dataset. Follow the component sequence in
+[Numerical model validation](NUMERICAL_MODEL_VALIDATION.md), and do not turn
+limited or cross-family screens into a broad compressor qualification.
+
+Remaining data limits:
+
+- NASA HECC archive access returned HTTP 403 in the 2026-10-13 handoff.
+- Eckardt A/B, Choi–Kang, and Sandia use different assumptions and support
+  component/performance screens only.
+- RADIVER requires authorized local data and must remain subject to its signed
+  license.
+- Selected-machine guide-vane, recycle hardware, and surge maps are missing.
+- The passage_turning_sensitivity test remains disabled; report that status
+  and rerun the complete suite after resolving it.
 
 ## Acceleration
 
@@ -221,21 +245,28 @@ Keep the validated scalar CPU model as the oracle. GPU or other accelerator work
 
 ## Working sequence
 
-1. Run the PengRobinson leave-one-complete-speed-line-out qualification.
-   Review interior interpolation and endpoint extrapolation separately, then
-   choose a pipeline-use error gate before fitting for that use.
-2. The multi-step recycle disturbance test and map-interface test pass on
-   Dell. Compare the transient under time-step refinement; add measured
-   controller/actuator dynamics when data become available.
-3. Digitize the open TUM variable-IGV and surge figures with uncertainty and
-   provenance as a cross-machine software/data-pipeline screen.
-4. Obtain the selected compressor's own guide-vane, recycle valve/cooler, and
-   surge-map data; replace exploratory callbacks with bounded calibrated maps.
-5. Keep anti-surge disabled until the selected-machine map is independently
-   qualified, then test override, limits, and actuator response.
-6. Compare a measured pipeline transient and determine thermal transport needs
-   before using the current isothermal adapter beyond screening.
-7. Qualify the surrogate against the reference solver over a bounded domain,
-   then compare it within the same pipe-coupling case.
-8. Add station dispatch and acceleration only where the validated application
-   requires them.
+1. Run all enabled CTest tests and record the commit, compiler, build/EOS
+   options, optional dependencies, disabled tests, and complete output.
+2. Complete numerical verification by component: thermodynamic states and
+   derivatives; nonlinear solver paths; impeller continuity, work, and
+   conservation; diffuser friction and geometry; choking; and complete-stage
+   integration.
+3. Run matched external screens for Eckardt A/B, Choi–Kang, and Sandia. Use
+   CoolProp HEOS when available; keep RADIVER local under its license and
+   Schiffmann–Favrat labeled as a smoke test until its model inputs are
+   qualified.
+4. Report pointwise residuals, bias, MAE, maximum error, failures, measurement
+   uncertainty, station definitions, geometry, and EOS assumptions. Do not
+   combine separate datasets into one pass/fail score.
+5. Keep the Eckardt B 16,000 rpm line as its documented calibrated holdout.
+   Do not describe its fitted result as an uncalibrated or cross-family pass.
+6. Seek a geometry-complete independent full-stage dataset; revisit NASA HECC
+   access and pursue authorized RADIVER data.
+7. Resolve the disabled sensitivity test, then refine the multi-step recycle
+   pipe transient and compare it with measured behavior.
+8. Obtain selected-machine vane, recycle, and surge data before qualifying
+   hardware behavior or anti-surge protection.
+9. Resume surrogate qualification after reviewing the numerical model's
+   component evidence and validity domain.
+10. Add station dispatch and acceleration only where the validated application
+    requires them.

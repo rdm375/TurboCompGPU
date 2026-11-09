@@ -2,7 +2,7 @@
 
 Reviewed: 2026-11-09
 Repository: [rdm375/TurboCompGPU](https://github.com/rdm375/TurboCompGPU), branch `main`
-Code baseline reviewed: `df8cc301fadbeb891a97d87e83c5585563155556`
+Code baseline reviewed: `3980363d090d3b532cf50d437f8b90cfc9a0fa21`
 
 ## Project goals
 
@@ -35,6 +35,8 @@ compressor data.
 
 ## Validation facts and limits
 
+The active priority is component-wise verification and validation of the numerical compressor model. The campaign and its evidence limits are recorded in [Numerical model validation](NUMERICAL_MODEL_VALIDATION.md). Surrogate qualification is deferred while this work proceeds.
+
 - The Peng–Robinson complete-stage network is 2→64→64→32→3 with 6,368
   multiply-accumulates per evaluation. Hailo validation on the 441 training
   rows is in-sample quantization validation, not held-out speed-line evidence.
@@ -59,24 +61,30 @@ compressor data.
 
 ## Remaining project-level work
 
-1. Run and review the surrogate's independent whole-speed-line report, then
-   choose and document a use-case error gate before any pipeline use.
-2. The multi-step recycle disturbance test passed on the Dell. Compare its
-   transient profile under time-step refinement, then add controller dynamics
-   when actuator data are available.
-3. A source-reported TUM IGV summary is now transcribed in
-   `data/validation/tum_chen_2017_vigv_reported_results.csv` (Table 3.3 and
-   Figure 3.17 text). Digitize the actual per-speed performance and surge
-   curves with uncertainty and provenance. This is a different compressor:
-   it can test interface behavior and trends, but cannot calibrate this
-   machine's vane callback or authorize its anti-surge control.
-4. Obtain the selected compressor's own guide-vane schedule, valve/cooler
-   data, and surge line from a manufacturer, test campaign, or licensed map.
-5. Run a measured pipeline/compressor transient and compare the isothermal
-   adapter with an energy-transporting pipe model before operational claims.
+1. Run and record the component-wise numerical-model validation campaign in
+   [Numerical model validation](NUMERICAL_MODEL_VALIDATION.md). Begin with the
+   enabled regression suite and distinguish numerical verification from
+   comparisons against measurements.
+2. Expand the available Eckardt A/B, Choi–Kang, and Sandia component
+   comparisons. Preserve measurement planes, geometry and EOS assumptions,
+   calibration splits, uncertainties, and failures; do not pool them into one
+   accuracy score.
+3. Obtain a geometry-complete independent full-stage dataset. NASA HECC archive
+   access returned HTTP 403 in the 2026-10-13 handoff; pursue authorized sources
+   and record the scope of any accessible data.
+4. Resolve the disabled passage_turning_sensitivity test and record a fresh
+   full-suite result for this source tree.
+5. Refine the multi-step recycle transient under time-step refinement, then
+   compare with measured pipe/compressor behavior and an energy-transporting
+   pipe model.
+6. Obtain selected-machine guide-vane, recycle valve/cooler, and surge data
+   before making machine-specific hardware or protection claims.
+7. Resume surrogate qualification after the numerical reference model's
+   component evidence and validity limits have been reviewed.
 
 ## Related documentation
 
+- [Numerical model validation](NUMERICAL_MODEL_VALIDATION.md)
 - [Development roadmap](ROADMAP.md)
 - [Compressor controls](COMPRESSOR_CONTROL.md)
 - [Two-pipe transient coupling](TWO_PIPE_TRANSIENT_COUPLING.md)
