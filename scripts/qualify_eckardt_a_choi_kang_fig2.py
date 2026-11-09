@@ -65,6 +65,53 @@ def mean(values: list[float]) -> float:
     return sum(values) / len(values)
 
 
+def interpolate_y(points: list[tuple[float, float]], x: float) -> float:
+    if x <= points[0][0]:
+        return points[0][1]
+    if x >= points[-1][0]:
+        return points[-1][1]
+    for (x0, y0), (x1, y1) in zip(points, points[1:]):
+        if x0 <= x <= x1:
+            return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+    raise ValueError("Could not bracket interpolation query")
+
+
+def crossings(points: list[tuple[float, float]], target: float) -> list[float]:
+    result: list[float] = []
+    for (x0, y0), (x1, y1) in zip(points, points[1:]):
+        if y0 == target:
+            result.append(x0)
+        if (y0 - target) * (y1 - target) < 0.0:
+            result.append(x0 + (target - y0) * (x1 - x0) / (y1 - y0))
+    if points[-1][1] == target:
+        result.append(points[-1][0])
+    return sorted(set(result))
+
+
+def uncertainty_intervals(
+    points: list[tuple[float, float]], tolerance_pp: float
+) -> list[tuple[float, float]]:
+    boundaries = [points[0][0], points[-1][0]]
+    boundaries.extend(crossings(points, -tolerance_pp))
+    boundaries.extend(crossings(points, tolerance_pp))
+    boundaries = sorted(set(boundaries))
+    intervals: list[tuple[float, float]] = []
+    for lower, upper in zip(boundaries, boundaries[1:]):
+        middle = 0.5 * (lower + upper)
+        if abs(interpolate_y(points, middle)) <= tolerance_pp:
+            if intervals and abs(intervals[-1][1] - lower) < 1.0e-10:
+                intervals[-1] = (intervals[-1][0], upper)
+            else:
+                intervals.append((lower, upper))
+    for point_x, point_y in points:
+        if abs(point_y) <= tolerance_pp and not any(
+            lower - 1.0e-10 <= point_x <= upper + 1.0e-10
+            for lower, upper in intervals
+        ):
+            intervals.append((point_x, point_x))
+    return sorted(intervals)
+
+
 def read_loss_ablation(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as source:
         return list(csv.DictReader(source))
@@ -184,6 +231,8 @@ def main() -> int:
 
     ablation_summaries: list[dict[str, float | str]] = []
     for scenario in dict.fromkeys(str(row["scenario"]) for row in ablation_predictions):
+        if scenario.startswith("flow_mix_sweep_"):
+            continue
         rows = [row for row in ablation_predictions if row["scenario"] == scenario]
         errors = [float(row["efficiency_error_percentage_points"]) for row in rows]
         ablation_summaries.append({
@@ -197,6 +246,64 @@ def main() -> int:
             "mean_near_pressure_ratio": mean([
                 float(row["predicted_near_total_pressure_ratio"]) for row in rows]),
         })
+
+    # Interpolate the dense chi sweep only to expose how the matched-plane
+    # residual changes with flow. The source digitization uncertainty is
+    # approximately +/- 0.015 efficiency, or +/- 1.5 percentage points.
+    # This is a diagnostic consistency check, not coefficient fitting.
+    digitization_tolerance_pp = 1.5
+    mixing_curves: dict[float, list[tuple[float, float]]] = {}
+    for row in ablation_predictions:
+        scenario = str(row["scenario"])
+        if not scenario.startswith("flow_mix_sweep_chi_"):
+            continue
+        chi_text = scenario.removeprefix("flow_mix_sweep_chi_").split("_bstar_")[0]
+        flow = float(row["mass_flow_kg_s"])
+        mixing_curves.setdefault(flow, []).append((
+            float(chi_text), float(row["efficiency_error_percentage_points"])))
+    for curve in mixing_curves.values():
+        curve.sort()
+
+    if len(mixing_curves) != len(measurements):
+        raise RuntimeError(
+            "Dense mixing sweep does not contain every Choi-Kang flow point")
+    chi_grid = sorted({chi for curve in mixing_curves.values() for chi, _ in curve})
+    shared_scores = [
+        (chi, mean([abs(interpolate_y(curve, chi))
+                    for curve in mixing_curves.values()]))
+        for chi in chi_grid
+    ]
+    shared_chi, shared_mae_pp = min(shared_scores, key=lambda item: item[1])
+    mixing_diagnostics: list[dict[str, float | str]] = []
+    for measurement in measurements:
+        flow = measurement["mass_flow_kg_s"]
+        curve = mixing_curves[flow]
+        zero_crossings = crossings(curve, 0.0)
+        tolerance_ranges = uncertainty_intervals(
+            curve, digitization_tolerance_pp)
+        point: dict[str, float | str] = {
+            "rpm": RPM,
+            "mass_flow_kg_s": flow,
+            "measured_efficiency": measurement[
+                "measured_mixed_plane_efficiency"],
+            "digitization_tolerance_pp": digitization_tolerance_pp,
+            "chi_at_zero_error": zero_crossings[0] if zero_crossings else math.nan,
+            "chi_within_uncertainty_min": (
+                tolerance_ranges[0][0] if tolerance_ranges else math.nan),
+            "chi_within_uncertainty_max": (
+                tolerance_ranges[-1][1] if tolerance_ranges else math.nan),
+            "shared_chi_minimum_mae": shared_chi,
+            "efficiency_error_at_shared_chi_pp": interpolate_y(curve, shared_chi),
+            "shared_chi_mae_pp": shared_mae_pp,
+            "efficiency_error_at_reference_chi_0p15_pp": interpolate_y(curve, 0.15),
+        }
+        mixing_diagnostics.append(point)
+
+    mixing_diagnostic_csv = outdir / "mixing_flow_diagnostic.csv"
+    with mixing_diagnostic_csv.open("w", newline="", encoding="utf-8") as target:
+        writer = csv.DictWriter(target, fieldnames=list(mixing_diagnostics[0]))
+        writer.writeheader()
+        writer.writerows(mixing_diagnostics)
 
     ablation_csv = outdir / "station_matched_loss_ablation.csv"
     with ablation_csv.open("w", newline="", encoding="utf-8") as target:
@@ -286,6 +393,46 @@ def main() -> int:
         "Pointwise ablation: `station_matched_loss_ablation.csv`; summary: "
         "`station_matched_loss_ablation_summary.csv`.",
     ])
+    report.extend([
+        "",
+        "## Flow dependence of the mixing sensitivity",
+        "",
+        "A dense chi sweep at b*=1.00 was evaluated at the same three measured "
+        "flows and station planes. The reported chi values are piecewise-linear "
+        "interpolations between model runs. The interval column shows where the "
+        "efficiency residual falls within the approximate +/-1.5 percentage-point "
+        "digitization uncertainty.",
+        "",
+        f"The best single chi on the sampled 0.01 grid is {shared_chi:.2f}; its "
+        f"three-point efficiency MAE is {shared_mae_pp:.2f} percentage points. "
+        "This common-chi score is a sensitivity diagnostic, not an independently "
+        "validated calibration.",
+        "",
+        "| Flow (kg/s) | chi at zero residual | chi interval within digitization uncertainty | "
+        "Error at shared chi (pp) | Error at reference chi=0.15 (pp) |",
+        "|---:|---:|---:|---:|---:|",
+    ])
+    for row in mixing_diagnostics:
+        chi_zero = row["chi_at_zero_error"]
+        chi_lo = row["chi_within_uncertainty_min"]
+        chi_hi = row["chi_within_uncertainty_max"]
+        chi_text = "none" if math.isnan(float(chi_lo)) else (
+            f"{float(chi_lo):.3f}–{float(chi_hi):.3f}")
+        zero_text = "not bracketed" if math.isnan(float(chi_zero)) else f"{float(chi_zero):.3f}"
+        report.append(
+            f"| {row['mass_flow_kg_s']:.3f} | {zero_text} | {chi_text} | "
+            f"{row['efficiency_error_at_shared_chi_pp']:+.2f} | "
+            f"{row['efficiency_error_at_reference_chi_0p15_pp']:+.2f} |")
+    report.extend([
+        "",
+        "A shared chi is consistent with all three points only if the three "
+        "uncertainty intervals overlap. Sparse, approximate digitization cannot "
+        "establish a physical flow-dependent mixing law; additional measured "
+        "points are needed before changing the closure.",
+        "",
+        "Pointwise mixing diagnostic: `mixing_flow_diagnostic.csv`.",
+    ])
+
     report_path = outdir / "qualification.md"
     report_path.write_text("\n".join(report) + "\n", encoding="utf-8")
     print("\n".join(report))
@@ -293,6 +440,7 @@ def main() -> int:
     print(f"Report: {report_path}")
     print(f"Matched-plane loss ablation: {ablation_csv}")
     print(f"Matched-plane loss summary: {ablation_summary_csv}")
+    print(f"Mixing flow diagnostic: {mixing_diagnostic_csv}")
     return 0
 
 

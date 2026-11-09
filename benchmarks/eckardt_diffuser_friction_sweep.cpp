@@ -1398,6 +1398,20 @@ int main(int argc, char** argv)
                      << chi << "_bstar_1.00";
                 ablations.push_back({name.str(), losses, -1.0});
             }
+            // Dense, explicitly diagnostic sweep for the three station-matched
+            // Choi-Kang points. The Python qualification runner keeps these
+            // rows separate from the one-at-a-time ablation summary and
+            // reports whether any single chi lies within digitization error
+            // at all three flows. This does not alter the production model.
+            for (int chi_index = 0; chi_index <= 20; ++chi_index) {
+                const double chi = 0.01 * chi_index;
+                auto losses = full_losses;
+                losses.mixing_chi = chi;
+                std::ostringstream name;
+                name << "flow_mix_sweep_chi_" << std::fixed
+                     << std::setprecision(2) << chi << "_bstar_1.00";
+                ablations.push_back({name.str(), losses, -1.0});
+            }
             for (double bstar : {1.02, 1.10}) {
                 auto losses = full_losses;
                 losses.mixing_bstar = bstar;
