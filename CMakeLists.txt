@@ -1326,7 +1326,78 @@ target_link_libraries(
     PRIVATE turbocompgpu
 )
 
+add_executable(
+    turbocompgpu_validate_sandia_sco2_impeller
+    benchmarks/validate_sandia_sco2_impeller.cpp
+)
+target_link_libraries(
+    turbocompgpu_validate_sandia_sco2_impeller
+    PRIVATE turbocompgpu
+)
+
+# Optional higher-accuracy CO2 screen. CoolProp's Python wheel ships HEOS but
+# not a separately linkable C++ library, so this benchmark embeds the same
+# Python selected by CMake. The normal PR target remains dependency-free.
+set(TURBOCOMPGPU_COOLPROP_EMBED_IMPORT_RESULT "-1")
+find_package(Python3 COMPONENTS Interpreter Development.Embed QUIET)
+if(Python3_Interpreter_FOUND AND Python3_Development.Embed_FOUND)
+    execute_process(
+        COMMAND "${Python3_EXECUTABLE}" -c "import CoolProp"
+        RESULT_VARIABLE TURBOCOMPGPU_COOLPROP_EMBED_IMPORT_RESULT
+        OUTPUT_QUIET
+        ERROR_QUIET
+    )
+    if(TURBOCOMPGPU_COOLPROP_EMBED_IMPORT_RESULT EQUAL 0)
+        execute_process(
+            COMMAND "${Python3_EXECUTABLE}" -c
+                "import sysconfig; print(sysconfig.get_paths()['purelib'])"
+            OUTPUT_VARIABLE TURBOCOMPGPU_COOLPROP_SITEARCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+        add_executable(
+            turbocompgpu_validate_sandia_sco2_impeller_heos
+            benchmarks/validate_sandia_sco2_impeller.cpp
+        )
+        target_compile_definitions(
+            turbocompgpu_validate_sandia_sco2_impeller_heos
+            PRIVATE
+                TURBOCOMPGPU_WITH_HEOS=1
+                "TURBOCOMPGPU_COOLPROP_SITEARCH=\"${TURBOCOMPGPU_COOLPROP_SITEARCH}\""
+        )
+        target_link_libraries(
+            turbocompgpu_validate_sandia_sco2_impeller_heos
+            PRIVATE turbocompgpu Python3::Python
+        )
+    endif()
+endif()
+
+add_executable(
+    turbocompgpu_validate_schiffmann_favrat_design_point
+    benchmarks/validate_schiffmann_favrat_design_point.cpp
+)
+target_link_libraries(
+    turbocompgpu_validate_schiffmann_favrat_design_point
+    PRIVATE turbocompgpu
+)
+
+add_executable(
+    turbocompgpu_validate_radiver_local_map
+    benchmarks/validate_radiver_local_map.cpp
+)
+target_link_libraries(
+    turbocompgpu_validate_radiver_local_map
+    PRIVATE turbocompgpu
+)
+
 if(BUILD_TESTING)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    add_test(
+        NAME eckardt_a_external_map_screen
+        COMMAND turbocompgpu_validate_eckardt_impeller_a
+            "${CMAKE_CURRENT_SOURCE_DIR}/data/validation/eckardt_impeller_a.csv"
+            "${CMAKE_CURRENT_BINARY_DIR}/eckardt_a_qualification.csv"
+    )
     add_test(
         NAME eckardt_b_external_map_screen
         COMMAND turbocompgpu_validate_eckardt_impeller_a
@@ -1335,8 +1406,109 @@ if(BUILD_TESTING)
             "" B
     )
     set_tests_properties(
-        eckardt_b_external_map_screen
+        eckardt_a_external_map_screen eckardt_b_external_map_screen
         PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    add_test(
+        NAME eckardt_b_heldout_speedline_qualification
+        COMMAND ${Python3_EXECUTABLE}
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/qualify_eckardt_b_speedline_holdout.py"
+            --executable "$<TARGET_FILE:turbocompgpu_validate_eckardt_impeller_a>"
+            --map "${CMAKE_CURRENT_SOURCE_DIR}/data/validation/eckardt_impeller_b.csv"
+            --train-rpm 10000 12000 14000
+            --holdout-rpm 16000
+            --max-holdout-error-percent 7.0
+            --output "${CMAKE_CURRENT_BINARY_DIR}/eckardt_b_speedline_holdout.csv"
+            --report "${CMAKE_CURRENT_BINARY_DIR}/eckardt_b_speedline_holdout.md"
+    )
+    set_tests_properties(
+        eckardt_b_heldout_speedline_qualification
+        PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    add_test(
+        NAME sandia_sco2_impeller_component_screen
+        COMMAND turbocompgpu_validate_sandia_sco2_impeller
+            "${CMAKE_CURRENT_SOURCE_DIR}/data/validation/sandia_sco2_report_table.csv"
+            "${CMAKE_CURRENT_BINARY_DIR}/sandia_sco2_impeller_screen.csv"
+    )
+    set_tests_properties(
+        sandia_sco2_impeller_component_screen
+        PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    if(TARGET turbocompgpu_validate_sandia_sco2_impeller_heos)
+        add_test(
+            NAME sandia_sco2_impeller_heos_component_screen
+            COMMAND turbocompgpu_validate_sandia_sco2_impeller_heos
+                "${CMAKE_CURRENT_SOURCE_DIR}/data/validation/sandia_sco2_report_table.csv"
+                "${CMAKE_CURRENT_BINARY_DIR}/sandia_sco2_impeller_heos_screen.csv"
+        )
+        set_tests_properties(
+            sandia_sco2_impeller_heos_component_screen
+            PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        )
+    elseif(TURBOCOMPGPU_COOLPROP_EMBED_IMPORT_RESULT EQUAL 0)
+        message(STATUS
+            "CoolProp is installed, but Python Development.Embed was not found; "
+            "the optional HEOS compressor screen is unavailable")
+    endif()
+    set(TURBOCOMPGPU_RADIVER_LOCAL_MAP "" CACHE FILEPATH
+        "Path to an authorized local RADIVER map CSV; do not commit licensed data")
+    if(TURBOCOMPGPU_RADIVER_LOCAL_MAP)
+        if(NOT EXISTS "${TURBOCOMPGPU_RADIVER_LOCAL_MAP}")
+            message(FATAL_ERROR
+                "TURBOCOMPGPU_RADIVER_LOCAL_MAP does not exist: ${TURBOCOMPGPU_RADIVER_LOCAL_MAP}")
+        endif()
+        add_test(
+            NAME radiver_authorized_local_map_screen
+            COMMAND turbocompgpu_validate_radiver_local_map
+                "${TURBOCOMPGPU_RADIVER_LOCAL_MAP}"
+                "${CMAKE_CURRENT_BINARY_DIR}/radiver_local_map_screen.csv"
+        )
+    endif()
+    execute_process(
+        COMMAND "${Python3_EXECUTABLE}" -c "import CoolProp"
+        RESULT_VARIABLE TURBOCOMPGPU_COOLPROP_IMPORT_RESULT
+        OUTPUT_QUIET
+        ERROR_QUIET
+    )
+    if(TURBOCOMPGPU_COOLPROP_IMPORT_RESULT EQUAL 0)
+        add_test(
+            NAME sandia_co2_properties_against_heos
+            COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/scripts/compare_sandia_co2_properties.py"
+                --executable "$<TARGET_FILE:turbocompgpu_validate_sandia_sco2_impeller>"
+                --map "${CMAKE_CURRENT_SOURCE_DIR}/data/validation/sandia_sco2_report_table.csv"
+                --output "${CMAKE_CURRENT_BINARY_DIR}/sandia_co2_heos_property_comparison.csv"
+        )
+        set_tests_properties(
+            sandia_co2_properties_against_heos
+            PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        )
+    else()
+        message(STATUS
+            "CoolProp not found in the selected Python interpreter; "
+            "Sandia HEOS property comparison will be available after installing CoolProp")
+    endif()
+    add_test(
+        NAME schiffmann_favrat_design_point_smoke
+        COMMAND turbocompgpu_validate_schiffmann_favrat_design_point
+            "${CMAKE_CURRENT_SOURCE_DIR}/data/validation/schiffmann_favrat_design_point.csv"
+            "${CMAKE_CURRENT_BINARY_DIR}/schiffmann_favrat_design_point_screen.csv"
+    )
+    set_tests_properties(
+        schiffmann_favrat_design_point_smoke
+        PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    add_test(
+        NAME eckardt_a_choi_kang_station_matched_screen
+        COMMAND ${Python3_EXECUTABLE}
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/qualify_eckardt_a_choi_kang_fig2.py"
+            --executable "$<TARGET_FILE:turbocompgpu_eckardt_diffuser_friction_sweep>"
+            --output-dir "${CMAKE_CURRENT_BINARY_DIR}/choi-kang-fig2"
+    )
+    set_tests_properties(
+        eckardt_a_choi_kang_station_matched_screen
+        PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
 endif()
 

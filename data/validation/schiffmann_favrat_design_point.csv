@@ -1,0 +1,8 @@
+# Published design-point summary from Meroni et al., Table 4.4 and Appendix C,
+# reproducing Schiffmann and Favrat's R134a compressor validation point.
+# This is a one-point summary, not a digitization of Fig. 10's speed-line map.
+# The cited summary gives T01=265 K; a later published validation table lists
+# 283.15 K for the EPFL compressor. Reconcile the source run before performance
+# use; this row is retained only for the solver smoke test.
+# T01_K,p01_Pa,rpm,mass_flow_kg_s,measured_PRtt,measured_eta_tt
+265,165000,180000,0.039,2.35,0.800

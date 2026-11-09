@@ -2,4 +2,7 @@
 # unless the applicable dataset license explicitly permits redistribution.
 # Copy this template outside the repository and populate from an authorized local
 # measurement export. Preserve source file, run, station, and uncertainty metadata.
+# station must be impeller_exit_total or vaneless_exit_total. Ratios are total
+# pressure at that station divided by inlet total pressure; keep each point's
+# actual measured inlet temperature and pressure rather than assuming defaults.
 # rpm,mass_flow_kg_s,measured_total_pressure_ratio,inlet_total_temperature_K,inlet_total_pressure_Pa,source_run,station
