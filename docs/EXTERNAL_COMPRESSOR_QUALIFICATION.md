@@ -238,6 +238,35 @@ and 37.84%). The separate 30-state diagnostic grid gave density and Cp MAPE of
 8.68% and 19.84%. These groups should remain separate: only the first uses the
 reported map inlet conditions.
 
+
+To test whether one empirical effective slip/head scalar explains the P3
+residual trend, the HEOS executable has an optional bounded calibration mode.
+It fits on the five points at or below 39,000 rpm and evaluates the seven
+higher-RPM points as holdout data. Since the table has at most one point at
+each RPM, this is a low-speed/high-speed split, not a holdout of complete
+measured speed lines. The inlet static states are computed once and reused
+during fitting. The objective is training-set mean squared relative P3 error;
+the default scalar bounds are 0.60–0.99. The output compares the baseline 0.84
+and fitted scalar on both sets without a pass/fail threshold. This parameter is
+an empirical head correction, not a measured blade slip factor.
+
+The bounded nonlinear fit requires repeated operating-point solves and can
+take several minutes on the CPU. Run it after building the optional HEOS
+executable:
+
+\`\`\`sh
+./build-eckardt-validation/turbocompgpu_validate_sandia_sco2_impeller_heos \\
+  --fit-effective-slip \\
+  data/validation/sandia_sco2_report_table.csv \\
+  39000 \\
+  build-eckardt-validation/sandia_sco2_heos_effective_slip_fit.csv
+\`\`\`
+
+The CSV contains baseline and fitted errors for every row, tagged as training
+or holdout. This experiment tests transfer of the low-speed calibration to
+higher speeds; it still does not qualify the estimated geometry or impeller
+loss model.
+
 These comparisons do not make the impeller screen a CO2 qualification. Do not
 tune the air loss model against the Sandia stage outlet table. A stronger
 near-critical CO2 claim requires a validated Span–Wagner-class model in the

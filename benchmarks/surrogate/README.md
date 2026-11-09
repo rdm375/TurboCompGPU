@@ -20,8 +20,15 @@ Run on the Dell 7710 with the CPU PyTorch environment:
 ```bash
 cd ~/Sync/TurboCompGPU
 . .venv/bin/activate
+cmake --build build-eckardt-validation \
+  --target turbocompgpu_complete_stage_boundaries_common_geometry --parallel 8
+PROJECT="$HOME/Sync/TurboCompGPU"
+GRID="$PROJECT/build/relu-surrogate/complete-stage-boundary-grid"
+mkdir -p "$GRID"
+(cd "$GRID" && \
+  "$PROJECT/build-eckardt-validation/turbocompgpu_complete_stage_boundaries_common_geometry")
 python benchmarks/surrogate/qualify_stage_surrogate.py \
-  build/relu-surrogate/complete-stage-boundary-grid/benchmarks/results-complete-stage-characteristic/complete-stage-boundary-grid.csv \
+  "$GRID/benchmarks/results-complete-stage-characteristic/complete-stage-boundary-grid.csv" \
   --model PengRobinson \
   --output-dir build/relu-surrogate/stage-speedline-qualification \
   --cpu-threads 2
@@ -37,7 +44,7 @@ sbatch --nodelist=dell7710 --partition=compute --chdir="$PROJECT" \
   --cpus-per-task=2 --mem=4G --time=00:30:00 \
   --output="$PROJECT/build/relu-surrogate/slurm-logs/qualify-%j.out" \
   --error="$PROJECT/build/relu-surrogate/slurm-logs/qualify-%j.err" \
-  --wrap='. .venv/bin/activate && python benchmarks/surrogate/qualify_stage_surrogate.py build/relu-surrogate/complete-stage-boundary-grid/benchmarks/results-complete-stage-characteristic/complete-stage-boundary-grid.csv --model PengRobinson --output-dir build/relu-surrogate/stage-speedline-qualification --cpu-threads "$SLURM_CPUS_PER_TASK"'
+  --wrap='PROJECT="$HOME/Sync/TurboCompGPU"; GRID="$PROJECT/build/relu-surrogate/complete-stage-boundary-grid"; mkdir -p "$GRID"; (cd "$GRID" && "$PROJECT/build-eckardt-validation/turbocompgpu_complete_stage_boundaries_common_geometry") && . .venv/bin/activate && python benchmarks/surrogate/qualify_stage_surrogate.py "$GRID/benchmarks/results-complete-stage-characteristic/complete-stage-boundary-grid.csv" --model PengRobinson --output-dir build/relu-surrogate/stage-speedline-qualification --cpu-threads "$SLURM_CPUS_PER_TASK"'
 ```
 
 Outputs are `qualification_report.json` and
@@ -46,6 +53,15 @@ metrics separately before using the candidate in the pipeline component. This
 only establishes approximation of this numerical model over the sampled
 fixed-setup domain; it does not establish experimental accuracy or validity
 for other compressor inputs.
+
+The script records metrics but does not declare a project-wide pass/fail gate.
+The pipeline-use error tolerance has not been approved, and no current
+qualification report is committed. Run this after regenerating the boundary
+grid from the current source, inspect the per-speed CSV and JSON, then set a
+predeclared use-case gate before using a surrogate in a coupled plant run.
+Endpoint folds extrapolate speed beyond the remaining training lines; report
+them separately from interior interpolation and do not hide a poor edge fold
+inside an all-fold average.
 
 ## Train and export on the 7710
 

@@ -1754,6 +1754,19 @@ endif()
 # A0-A3: compressor/pipeline contract, controls, and recycle integration tests.
 if(BUILD_TESTING)
     add_executable(
+        turbocompgpu_calibrated_maps_test
+        tests/calibrated_maps.cpp
+    )
+    target_link_libraries(
+        turbocompgpu_calibrated_maps_test
+        PRIVATE turbocompgpu
+    )
+    add_test(
+        NAME calibrated_map_interpolation
+        COMMAND turbocompgpu_calibrated_maps_test
+    )
+
+    add_executable(
         turbocompgpu_pipeline_control_test
         tests/pipeline_control.cpp
     )

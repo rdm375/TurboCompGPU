@@ -484,11 +484,226 @@ ImpellerSystemGeometry sandia_geometry()
     };
 }
 
+
+struct P3Prediction {
+    bool valid = false;
+    double pressure_pa = std::numeric_limits<double>::quiet_NaN();
+    double error_percent = std::numeric_limits<double>::quiet_NaN();
+    std::string message;
+};
+
+P3Prediction predict_p3(
+    const thermomodel::Model& eos,
+    const ImpellerSystemGeometry& geometry,
+    const Point& point,
+    const StaticState& inlet,
+    double effective_slip,
+    const NonlinearResidualScales& scales,
+    const NonlinearSolverOptions& solver_options)
+{
+    P3Prediction prediction;
+    try {
+        OperatingPointRequest request{
+            {inlet.state.T, inlet.state.p, point.mass, point.rpm,
+             effective_slip, 0.0, 0.0},
+            {point.T0 + 15.0, std::log(1.3 * point.p0 / scales.pressure)}
+        };
+        const auto result = evaluate_operating_point(
+            eos, geometry, request, scales, solver_options);
+        prediction.valid = result.independently_validated &&
+                          result.basic_physics_valid;
+        prediction.message = result.message;
+        if (prediction.valid) {
+            prediction.pressure_pa = result.outlet_pressure;
+            prediction.error_percent = 100.0 *
+                (prediction.pressure_pa / (point.p3_bar * 1.0e5) - 1.0);
+        }
+    }
+    catch (const std::exception& error) {
+        prediction.message = error.what();
+    }
+    return prediction;
+}
+
+int run_effective_slip_holdout(
+    const std::filesystem::path& input_path,
+    double train_max_rpm,
+    const std::filesystem::path& output_path,
+    double minimum_slip,
+    double maximum_slip)
+{
+    if (!(std::isfinite(train_max_rpm) && train_max_rpm > 0.0) ||
+        !(std::isfinite(minimum_slip) && minimum_slip > 0.0 &&
+          minimum_slip < maximum_slip && maximum_slip <= 1.0)) {
+        throw std::invalid_argument("Invalid effective-slip holdout bounds");
+    }
+
+    const auto points = read_points(input_path);
+    const auto eos = make_co2();
+    const auto geometry = sandia_geometry();
+    const double inlet_area = effective_flow_area(
+        inlet_annulus_area(geometry.inlet), geometry.inlet.blockage);
+    constexpr double pressure_scale = 10.0e6;
+    const NonlinearResidualScales scales{100000.0, 100.0, pressure_scale};
+    NonlinearSolverOptions solver_options;
+    solver_options.residual_tolerance = 1.0e-10;
+
+    // Reuse expensive total-to-static HEOS inlet reconstructions during fit.
+    std::vector<StaticState> inlets;
+    inlets.reserve(points.size());
+    for (const auto& point : points)
+        inlets.push_back(inlet_static(*eos, point, inlet_area));
+
+    std::vector<std::size_t> training, holdout;
+    for (std::size_t i = 0; i < points.size(); ++i)
+        (points[i].rpm <= train_max_rpm ? training : holdout).push_back(i);
+    if (training.empty() || holdout.empty())
+        throw std::runtime_error(
+            "The RPM cutoff must leave at least one training and one holdout point");
+
+    auto objective = [&](double slip) {
+        double squared_error_sum = 0.0;
+        for (const auto index : training) {
+            const auto prediction = predict_p3(
+                *eos, geometry, points[index], inlets[index], slip,
+                scales, solver_options);
+            if (!prediction.valid) return std::numeric_limits<double>::infinity();
+            const double relative_error = prediction.error_percent / 100.0;
+            squared_error_sum += relative_error * relative_error;
+        }
+        return squared_error_sum / static_cast<double>(training.size());
+    };
+
+    // Bounded golden-section fit; the RPM holdout never enters the objective.
+    constexpr double inverse_phi = 0.6180339887498948482;
+    double left = minimum_slip;
+    double right = maximum_slip;
+    double x1 = right - inverse_phi * (right - left);
+    double x2 = left + inverse_phi * (right - left);
+    double f1 = objective(x1);
+    double f2 = objective(x2);
+    for (int iteration = 0; iteration < 14; ++iteration) {
+        if (f1 <= f2) {
+            right = x2;
+            x2 = x1;
+            f2 = f1;
+            x1 = right - inverse_phi * (right - left);
+            f1 = objective(x1);
+        }
+        else {
+            left = x1;
+            x1 = x2;
+            f1 = f2;
+            x2 = left + inverse_phi * (right - left);
+            f2 = objective(x2);
+        }
+    }
+
+    double fitted_slip = 0.5 * (left + right);
+    double fitted_objective = objective(fitted_slip);
+    const double low_objective = objective(minimum_slip);
+    if (low_objective < fitted_objective) {
+        fitted_slip = minimum_slip;
+        fitted_objective = low_objective;
+    }
+    const double high_objective = objective(maximum_slip);
+    if (high_objective < fitted_objective) {
+        fitted_slip = maximum_slip;
+        fitted_objective = high_objective;
+    }
+    if (!std::isfinite(fitted_objective))
+        throw std::runtime_error(
+            "No valid training predictions across the effective-slip search bounds");
+
+    struct ScoreSet {
+        double absolute_error_sum = 0.0;
+        double squared_error_sum = 0.0;
+        double max_absolute_error = 0.0;
+        std::size_t count = 0;
+    } baseline_train, baseline_holdout, fit_train, fit_holdout;
+    auto add_score = [](ScoreSet& score, const P3Prediction& prediction) {
+        if (!prediction.valid) return;
+        const double error = prediction.error_percent;
+        score.absolute_error_sum += std::abs(error);
+        score.squared_error_sum += error * error;
+        score.max_absolute_error = std::max(score.max_absolute_error, std::abs(error));
+        ++score.count;
+    };
+
+    if (!output_path.parent_path().empty())
+        std::filesystem::create_directories(output_path.parent_path());
+    std::ofstream csv(output_path);
+    if (!csv) throw std::runtime_error("Cannot write " + output_path.string());
+    csv << std::setprecision(12)
+        << "split,rpm,mass_flow_kg_s,measured_P3_Pa,baseline_slip,"
+           "baseline_predicted_P3_Pa,baseline_error_percent,fitted_slip,"
+           "fitted_predicted_P3_Pa,fitted_error_percent,baseline_valid,"
+           "fitted_valid,message\n";
+
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        const bool is_training = points[i].rpm <= train_max_rpm;
+        auto& baseline_score = is_training ? baseline_train : baseline_holdout;
+        auto& fitted_score = is_training ? fit_train : fit_holdout;
+        const auto baseline = predict_p3(
+            *eos, geometry, points[i], inlets[i], 0.84, scales, solver_options);
+        const auto fitted = predict_p3(
+            *eos, geometry, points[i], inlets[i], fitted_slip, scales, solver_options);
+        add_score(baseline_score, baseline);
+        add_score(fitted_score, fitted);
+        std::string message = fitted.message;
+        if (!baseline.valid)
+            message = "baseline prediction failed: " + baseline.message + "; " + message;
+        for (char& c : message) if (c == ',' || c == '\n' || c == '\r') c = ';';
+        csv << (is_training ? "train" : "holdout") << ','
+            << points[i].rpm << ',' << points[i].mass << ','
+            << points[i].p3_bar * 1.0e5 << ",0.84,"
+            << baseline.pressure_pa << ',' << baseline.error_percent << ','
+            << fitted_slip << ',' << fitted.pressure_pa << ','
+            << fitted.error_percent << ',' << baseline.valid << ','
+            << fitted.valid << ',' << message << '\n';
+    }
+
+    auto print_score = [](const char* name, const ScoreSet& score) {
+        if (score.count == 0) {
+            std::cout << name << ": no valid predictions\n";
+            return;
+        }
+        std::cout << name << ": n=" << score.count
+                  << " MAPE=" << score.absolute_error_sum / score.count << "%"
+                  << " RMSE=" << std::sqrt(score.squared_error_sum / score.count) << "%"
+                  << " max_abs=" << score.max_absolute_error << "%\n";
+    };
+    std::cout << "Sandia CO2 " << co2_backend_name()
+              << " effective slip/head fit; training RPM <= " << train_max_rpm
+              << "; fitted parameter=" << fitted_slip
+              << " (bounded search [" << minimum_slip << ',' << maximum_slip << "])\n";
+    print_score("baseline training (slip 0.84)", baseline_train);
+    print_score("fitted training", fit_train);
+    print_score("baseline holdout (slip 0.84)", baseline_holdout);
+    print_score("fitted holdout", fit_holdout);
+    std::cout << "CSV: " << output_path << '\n';
+    return fit_train.count == training.size() && fit_holdout.count == holdout.size()
+        ? 0 : 2;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
 {
     try {
+        if (argc > 1 && std::string(argv[1]) == "--fit-effective-slip") {
+            if (argc != 5 && argc != 7) {
+                std::cerr << "Usage: " << argv[0]
+                          << " --fit-effective-slip MAP.csv TRAIN_MAX_RPM OUTPUT.csv"
+                             " [MIN_SLIP MAX_SLIP]\n";
+                return 2;
+            }
+            const double minimum_slip = argc > 5 ? std::stod(argv[5]) : 0.60;
+            const double maximum_slip = argc > 6 ? std::stod(argv[6]) : 0.99;
+            return run_effective_slip_holdout(
+                argv[2], std::stod(argv[3]), argv[4],
+                minimum_slip, maximum_slip);
+        }
         const std::filesystem::path input = argc > 1 ? argv[1] :
             "data/validation/sandia_sco2_report_table.csv";
         const std::filesystem::path output = argc > 2 ? argv[2] :

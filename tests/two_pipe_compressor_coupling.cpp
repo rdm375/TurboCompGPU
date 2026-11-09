@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <numbers>
 #include <stdexcept>
 
@@ -208,6 +209,71 @@ void test_two_pipe_compressor_step()
     require(std::abs(pipe_mass_balance_defect(
                 pipe, downstream_initial, recycled.downstream)) < 1.0e-6,
             "recycle downstream linepack balance failed");
+
+    // Carry pipe inventory through a demand and recycle-valve transient.
+    // The compressor remains quasi-steady at fixed speed at each implicit
+    // pipe step; the imposed schedule represents the outer controller and
+    // actuator commands, which are not dynamically modeled in this test.
+    auto transient_upstream = upstream_initial;
+    auto transient_downstream = downstream_initial;
+    constexpr double export_schedule[] = {5.0, 4.7, 5.3, 5.0};
+    constexpr double recycle_schedule[] = {0.0, 0.25, 0.50, 0.0};
+    double first_delivery_pressure = 0.0;
+    double last_delivery_pressure = 0.0;
+    double maximum_transient_recycle_flow = 0.0;
+    for (std::size_t step = 0;
+         step < std::size(export_schedule); ++step) {
+        const auto transient = advance_two_pipe_compressor_with_recycle(
+            f.model, pipe, transient_upstream, 500000.0,
+            pipe, transient_downstream, export_schedule[step],
+            compressor, 12000.0, recycle_schedule[step], valve_map,
+            recycle_return, recycle_options);
+        require(transient.valid, transient.message.c_str());
+        require(std::abs(pipe_mass_balance_defect(
+                    pipe, transient_upstream, transient.upstream)) < 1.0e-6,
+                "transient recycle upstream linepack balance failed");
+        require(std::abs(pipe_mass_balance_defect(
+                    pipe, transient_downstream, transient.downstream)) < 1.0e-6,
+                "transient recycle downstream linepack balance failed");
+        require(std::abs(transient.compressor_node_mass_residual_kg_s) < 1.0e-6,
+                "transient recycle compressor-node balance failed");
+        require(std::abs(transient.recycle_mass_residual_kg_s) < 1.0e-6,
+                "transient recycle valve-flow closure failed");
+        require(std::abs(transient.suction_mixer_enthalpy_residual_w) < 1.0e-6,
+                "transient recycle mixer energy balance failed");
+        require(std::abs(
+                    transient.compressor_throughflow_kg_s -
+                    transient.fresh_flow_kg_s -
+                    transient.recycle_flow_kg_s) < 1.0e-8,
+                "transient compressor flow did not equal fresh plus recycle");
+        require(std::abs(transient.measurements.pipeline_export_flow_kg_s -
+                         export_schedule[step]) < 1.0e-10,
+                "transient did not preserve the scheduled net export flow");
+        if (recycle_schedule[step] == 0.0) {
+            require(std::abs(transient.recycle_flow_kg_s) < 1.0e-12,
+                    "transient closed-valve step passed recycle flow");
+        } else {
+            require(transient.recycle_flow_kg_s > 0.0,
+                    "transient open-valve step produced no recycle flow");
+        }
+        if (step == 0)
+            first_delivery_pressure = transient.measurements.discharge_pressure_pa;
+        last_delivery_pressure = transient.measurements.discharge_pressure_pa;
+        maximum_transient_recycle_flow = std::max(
+            maximum_transient_recycle_flow, transient.recycle_flow_kg_s);
+        transient_upstream = transient.upstream;
+        transient_downstream = transient.downstream;
+    }
+    require(maximum_transient_recycle_flow > 0.0,
+            "transient schedule never exercised the recycle branch");
+    require(std::abs(last_delivery_pressure - first_delivery_pressure) > 1.0,
+            "demand/valve transient did not change the coupled delivery pressure");
+    require(std::abs(transient_upstream.pressure_pa.back() -
+                     upstream_initial.pressure_pa.back()) > 1.0,
+            "upstream pipe state did not evolve over the transient");
+    require(std::abs(transient_downstream.pressure_pa.back() -
+                     downstream_initial.pressure_pa.back()) > 1.0,
+            "downstream pipe linepack did not evolve over the transient");
 
     RecycleDeliveryPressureBoundaryOptions recycle_delivery_options;
     recycle_delivery_options.recycle_coupling = recycle_options;

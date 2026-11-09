@@ -1,10 +1,11 @@
 # A0–A3 compressor/pipeline implementation contract
 
-The header-only interfaces in \`include/turbocompgpu/pipeline_compressor.hpp\`
-and \`include/turbocompgpu/steady_pipeline_control.hpp\` establish the
-compressor boundary and the steady control/recycle calculations. They are
-designed to be bound to a pipe-network evaluator; this repository does not
-currently contain that pipe solver.
+The interfaces in \`include/turbocompgpu/pipeline_compressor.hpp\`,
+\`include/turbocompgpu/steady_pipeline_control.hpp\`, and
+\`include/turbocompgpu/transient_pipe_coupling.hpp\` define the compressor
+ports, steady control/recycle calculations, and optional adapter to the
+external \`pipe_sim\` transient solver. Supply the pipe solver source path at
+CMake configure time.
 
 ## A0 — Component ports and conventions
 
@@ -60,19 +61,18 @@ recycle-loop mass/energy balances. Its fixtures use deterministic callbacks,
 not a calibrated compressor map.
 
 The optional `two_pipe_compressor_coupling` CTest advances the native
-`pipe_sim` solver on both sides of a real compressor component. Its inner
+`pipe_sim` solver on both sides of a real compressor component. The inner
 closure equates compressor through-flow with the downstream pipe's computed
-inlet flow; pipeline export remains the downstream outlet-flow boundary.
-The test applies discharge-pressure speed control, then advances further
-steps after changing export demand. See
-`docs/TWO_PIPE_TRANSIENT_COUPLING.md` for build commands and the isothermal,
-closed-recycle scope.
+inlet flow; pipeline export remains the downstream outlet-flow boundary. It
+checks single-step recycle and control behavior and a multi-step
+demand/recycle-valve profile. See `docs/TWO_PIPE_TRANSIENT_COUPLING.md` for
+build commands and the isothermal, quasi-steady limits.
 
 ## Remaining qualification needed
 
 This two-pipe coupling does not constitute a measured pipeline case or a
-fully coupled compressor/recycle/thermal transient model. Supply machine
-guide-vane and recycle-valve data, extend the pipe state to carry the needed
-thermal/EOS variables, add transient recycle coupling, and run the qualification
-on the Dell 7710. The surge-map and anti-surge qualification remains a later
-milestone.
+fully dynamic compressor/recycle/thermal transient model. The multi-step
+disturbance extension still needs a Dell run and timestep refinement. Supply
+machine guide-vane and recycle-valve/cooler data, extend the pipe state to
+carry thermal/EOS variables, and qualify a machine-specific surge map before
+anti-surge use.

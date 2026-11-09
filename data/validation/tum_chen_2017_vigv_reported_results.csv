@@ -1,0 +1,16 @@
+source_location,vane_design,igv_setting_deg,quantity,normalized_flow_coefficient,value,units,qualifier,uncertainty,digitization_notes
+Table 3.3,all,-20,nominal_flow_coefficient,1.152,1.152,dimensionless,reported_table_value,not_reported,Flow coefficient normalized by the 0-degree design-point value; tabulated to 0.001.
+Table 3.3,all,0,nominal_flow_coefficient,1.000,1.000,dimensionless,reported_table_value,not_reported,Flow coefficient normalized by the 0-degree design-point value; tabulated to 0.001.
+Table 3.3,all,20,nominal_flow_coefficient,0.944,0.944,dimensionless,reported_table_value,not_reported,Flow coefficient normalized by the 0-degree design-point value; tabulated to 0.001.
+Table 3.3,all,40,nominal_flow_coefficient,0.751,0.751,dimensionless,reported_table_value,not_reported,Flow coefficient normalized by the 0-degree design-point value; tabulated to 0.001.
+Table 3.3,all,60,nominal_flow_coefficient,0.616,0.616,dimensionless,reported_table_value,not_reported,Flow coefficient normalized by the 0-degree design-point value; tabulated to 0.001.
+Figure 3.17(a) discussion,B_and_C,0,stage_total_pressure_ratio_difference_vs_A,1.000,2,percent,at_least,not_reported,Source text says B and C exceed Type A by at least 2 percent at the 0-degree design point.
+Figure 3.17(a) discussion,B_and_C,20,stage_total_pressure_ratio_difference_vs_A,0.944,3,percent,approximately,not_reported,Source text says B and C are nearly identical and about 3 percent above Type A at the nominal point.
+Figure 3.17(a) discussion,C_vs_A,60,stage_total_pressure_ratio_difference,0.616,6,percent,up_to,not_reported,Source text reports a gap as large as 6 percent at the nominal point.
+Figure 3.17(c) discussion,B_and_C,0,stage_efficiency_improvement,1.000,2,percent,up_to,not_reported,Source says benefits can be as much as 2 percent at the design point; the text does not clarify whether this means relative percent or percentage points.
+Figure 3.17(d) discussion,B_and_C,0,stage_head_coefficient_improvement,1.000,5,percent,about,not_reported,Source says B and C have about 5 percent increase over Type A at design point.
+Figure 3.17(d) discussion,all,-20,surge_flow_spread_between_vane_designs,,1,percent,less_than,not_reported,Source says all three designs have effectively identical minimum flow (difference below 1 percent) at every IGV setting.
+Figure 3.17(d) discussion,all,0,surge_flow_spread_between_vane_designs,,1,percent,less_than,not_reported,Source says all three designs have effectively identical minimum flow (difference below 1 percent) at every IGV setting.
+Figure 3.17(d) discussion,all,20,surge_flow_spread_between_vane_designs,,1,percent,less_than,not_reported,Source says all three designs have effectively identical minimum flow (difference below 1 percent) at every IGV setting.
+Figure 3.17(d) discussion,all,40,surge_flow_spread_between_vane_designs,,1,percent,less_than,not_reported,Source says all three designs have effectively identical minimum flow (difference below 1 percent) at every IGV setting.
+Figure 3.17(d) discussion,all,60,surge_flow_spread_between_vane_designs,,1,percent,less_than,not_reported,Source says all three designs have effectively identical minimum flow (difference below 1 percent) at every IGV setting.

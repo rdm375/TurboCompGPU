@@ -10,14 +10,18 @@ The surrogate is meant to approximate compressor behavior cheaply inside larger 
 
 ## Current status
 
-The default branch contains substantial compressor and diffuser modeling, but the project has not reached either end-to-end goal:
+The default branch contains substantial compressor and diffuser modeling. The initial software pipe-coupling and surrogate workflows are present, but neither is fully qualified for pipeline use:
 
-- **Pipeline coupling is not implemented.** The repository has flow-station and compressor operating-point types, but no demonstrated compressor-to-pipeline boundary component or coupled transient case.
-- **A preliminary ReLU surrogate baseline is now included.** It fits current C++-generated compressor-map samples; it does not reproduce the unavailable hackathon dataset and is not qualified for pipeline use.
+- **Pipe/compressor coupling is implemented and is isothermal/quasi-steady.** The optional `pipe_sim` adapter connects upstream and downstream pipe segments, supports recycle accounting, and includes single-step and multi-step checks. A Dell run of the new recycle disturbance case and time-step refinement are still pending.
+- **The ReLU surrogate training/export and held-out-speed-line evaluator are included.** They approximate current C++-generated samples, not the unavailable hackathon dataset or experimental truth. No current holdout report or pipeline-use error gate is recorded.
+- **Guide-vane mapping has a calibrated callback interface.** A selected-machine physical map is still missing. A public TUM experiment is a cross-machine digitization candidate, not calibration for this compressor.
+- **Surge protection requires an external map.** The current solver does not predict surge; keep anti-surge unavailable until a selected-machine map is independently qualified.
 - **GPU execution is not implemented.** Current solver and validation workflows are CPU based.
-- **Experimental compressor validation is pending.** The NASA HECC archive geometry and measurements were not obtained; the archived handoff records an HTTP 403.
+- **Experimental compressor validation is partial.** Eckardt, Choi–Kang, and Sandia screens are documented with limitations. The NASA HECC archive geometry and measurements were not obtained; the archived handoff records an HTTP 403.
 
 See [Project Status](docs/PROJECT_STATUS.md) for the evidence, limitations, and immediate work items, and the [Roadmap](docs/ROADMAP.md) for the two workstreams.
+The current held-out-surrogate, recycle-transient, and guide-vane/surge data
+record is in [Project gap-close data and run record](docs/PROJECT_GAP_CLOSE_2026-11.md).
 
 ## What is implemented
 
@@ -28,7 +32,7 @@ See [Project Status](docs/PROJECT_STATUS.md) for the evidence, limitations, and 
 - PCHIP infrastructure for diffuser hub and shroud profiles.
 - Incidence-loss experiments with independent algebraic checks.
 
-The incidence study covers 105 paired operating points across three thermodynamic configurations and reports 315 successful nonlinear solutions. Its incidence coefficient is exploratory, not experimentally calibrated. The HECC geometry work provides infrastructure, not a NASA geometry reconstruction or experimental validation.
+The incidence study covers 105 paired operating points across three thermodynamic configurations and reports 315 successful nonlinear solutions. Its incidence coefficient is exploratory, not experimentally calibrated. The HECC geometry work provides infrastructure, not a NASA geometry reconstruction or experimental validation. For exact current limits and next work, see [Project Status](docs/PROJECT_STATUS.md) and the [Roadmap](docs/ROADMAP.md).
 
 ## Validation and performance
 
@@ -76,12 +80,7 @@ This is a model-generated interpolation baseline, not an experimental or legacy-
 
 ## Project direction
 
-The immediate objective is a small, reviewable pipeline-coupling milestone, developed alongside a reproducible surrogate baseline:
-
-- Define the compressor component inputs and outputs using consistent thermodynamic and flow conventions.
-- Demonstrate one compressor between pipe sections in a steady case, then in a transient case.
-- Reproduce and qualify the hackathon’s sample-based ReLU interpolation on held-out compressor operation.
-- Compare the surrogate against both the available sample source and the physics solver over a clearly defined domain.
+The remaining project work is to run and review the surrogate holdout, verify the multi-step recycle transient on Dell, obtain selected-machine vane/recycle/surge data, and validate against measured station transients:
 
 See the [Roadmap](docs/ROADMAP.md) for acceptance criteria and sequencing.
 

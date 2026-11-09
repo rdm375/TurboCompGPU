@@ -1,7 +1,7 @@
 # TurboCompGPU Development Roadmap
 
-Reviewed: 2026-11-06
-Code status reference: default branch main, latest commit bcb7b89 (2026-11-06)
+Reviewed: 2026-11-09
+Code status reference: default branch main, latest reviewed commit df8cc301fadbeb891a97d87e83c5585563155556
 
 ## Project goals
 
@@ -21,16 +21,18 @@ These goals share data and interfaces, but they are not the same deliverable. Th
 | Impeller/diffuser complete-stage model | Implemented with numerical verification | Frictional and variable-width diffuser work is documented; empirical calibration is still missing |
 | Incidence closure | Experimental model extension | 105 paired points across three thermodynamic configurations; coefficient not experimentally calibrated |
 | Diffuser profile geometry | Infrastructure present | PCHIP hub/shroud profiles and tests; actual NASA HECC hot-wall geometry is not reconstructed |
-| Operator control modes | **Defined at interface level; integration pending** | Pressure, net-flow, and manual-speed modes need a plant/pipeline response and tuned gains |
-| Variable guide vanes | **Not modeled** | No guide-vane position input or vane-dependent operating map |
-| Recycle flow | **Not modeled** | No recycle branch, valve flow law, suction mixing/cooling, or exported-flow/through-flow accounting |
-| Surge map and margin | **Unavailable** | Solver convergence does not predict surge; anti-surge needs an independently qualified map |
-| Pipeline coupling | **Not implemented** | No end-to-end compressor boundary connected to a transient pipe model |
-| ReLU surrogate | **Preliminary baseline added; not yet qualified** | A trainer fits current C++-generated samples; its structured holdout results have not yet been recorded, and it is not connected to the pipeline |
+| Operator control modes | **Implemented; gains remain application-specific** | Manual speed, suction/discharge pressure, and net-export-flow modes are available. Pipe-coupled adapters and saturation behavior are tested. |
+| Variable guide vanes | **Bounded map loader tested; selected-machine data missing** | `calibrated_map_interpolation` passed on Dell. Rectilinear interpolation supplies prewhirl, entropy generation, and uncertainty bounds without extrapolation. |
+| Recycle flow | **Coupling and bounded hardware-map loaders tested; selected-unit data missing** | `calibrated_map_interpolation` passed on Dell. Valve flow and flow-dependent cooler return can be loaded from complete grids; hardware calibration remains absent. |
+| Surge map and margin | **Bounded interpolation tested; no qualified machine map** | `calibrated_map_interpolation` passed on Dell. Anti-surge still requires a qualified selected-unit map; keep protection disabled without one. |
+| Pipeline coupling | **Two-pipe adapter implemented; transient qualification incomplete** | Optional `pipe_sim` integration supports recycle; each segment currently uses fixed temperature and compressibility. |
+| ReLU surrogate | **Training/export and leave-one-speed-line-out workflow implemented; qualification result pending** | Whole-line interior interpolation and endpoint extrapolation are reported separately. No saved current report or pipeline error gate is recorded. |
 | GPU execution | **Not implemented** | Current code and reported timings are CPU based |
-| Experimental validation | **Pending** | NASA HECC archive access failed with HTTP 403 in the 2026-10-13 handoff |
+| Experimental validation | **Partial screens; machine hardware maps still missing** | Eckardt A/B, Choi–Kang, and Sandia screens exist. TUM source-reported IGV summaries are transcribed, while pointwise speed-line and surge coordinates still need digitization. TUM hardware differs from the current rotor. NASA HECC archive access failed with HTTP 403 in the 2026-10-13 handoff. |
 
 For supporting details, see [Project Status](PROJECT_STATUS.md) and the linked milestone reports.
+The current held-out-surrogate, transient-test, and physical-data acquisition
+record is in [Project gap-close data and run record](PROJECT_GAP_CLOSE_2026-11.md).
 
 ## Workstream A — Connect a compressor to a pipeline
 
@@ -73,39 +75,59 @@ automatic setpoint mode; mass and energy close at the component boundary;
 setpoints track when feasible; saturated commands report that the target is
 unreachable within the configured speed/power envelope.
 
-### A2 — Add guide-vane actuation to the physical model
+### A2 — Qualify guide-vane actuation against physical data
 
-Where the selected machine has variable inlet guide vanes (IGVs), add vane
-position as an explicit operating input. Model vane-induced prewhirl and the
-associated inlet flow/incidence and loss changes using available design or
-manufacturer data. Do not treat an arbitrary prewhirl value as an IGV model
-without establishing that relationship.
+The component accepts a vane angle only when a bounded `GuideVaneMap` is
+supplied. A rectilinear CSV loader can now bind measured prewhirl, entropy,
+and conservative uncertainty bounds to the component. The remaining work is
+to populate and validate that map for the selected machine. An open TUM dissertation reports stage maps at IGV settings
+−20°, 0°, 20°, 40°, and 60° for three vane designs, plus surge tests. Table
+3.3 and the numerical comparisons stated in the Figure 3.17 discussion are
+transcribed in `data/validation/tum_chen_2017_vigv_reported_results.csv`.
+Per-speed curve coordinates and surge-line digitization are still outstanding.
+Its compressor differs from the project's rotor: use it to check data import,
+interpolation, uncertainty, and software behavior, not to calibrate another
+machine's vane map.
 
 Generate and validate operating maps across speed and vane position. Retain a
 fixed-vane configuration for machines without IGVs.
 
 **Acceptance:** vane end stops and invalid positions are handled; the fixed-vane
 case recovers the existing model; representative vane/speed points agree with
-independent machine data or are clearly labeled as model-only qualification.
+independent data for the selected compressor. Cross-machine literature screens
+remain labeled as software/data-pipeline checks.
 
 ### A3 — Model recycle flow and its thermodynamics
 
-Add a discharge-to-suction recycle branch with a valve-opening-to-flow
-relationship, line pressure losses, and any cooler used by the station.
-At suction, mix fresh pipeline gas with cooled recycle using mass and energy
-balances. Feed the mixed suction state and total compressor through-flow to
-the compressor solver. Return net pipeline export flow separately.
+The steady recycle solver and two-pipe adapter provide a discharge-to-suction
+branch, suction mixing, and separate fresh, recycle, compressor-through-flow,
+and net-export values. Complete-grid loaders now cover measured valve flow and
+a flow-dependent cooler return state. Physical valve and cooler tables remain
+caller-supplied until selected-unit calibration data are available. A multi-step demand/valve disturbance test
+has been added after the existing single-step mass and energy checks; the Dell
+integration test passed on 2026-11-09. Time-step refinement remains outstanding.
 
 **Acceptance:** zero valve opening recovers the non-recycle case; recycle mass
-and energy balances close; flow tends to zero when the valve is closed; valve
-limits and pressure-ratio limits are explicit; a pressure/flow controller uses
-net export flow while compressor maps use internal through-flow.
+and energy balances close at every transient step; flow tends to zero when the
+valve is closed; valve limits are explicit; flow control uses net export while
+the compressor map uses internal through-flow; time-step refinement is
+reported.
 
 ### A4 — Obtain and qualify a surge-limit map
 
-The current solver does not predict rotating stall or surge. Obtain a
-speed-dependent surge line from manufacturer performance data, commissioning
-tests, or other independently validated source. Include IGV position and gas
+The table loader and interpolation path are implemented in
+`include/turbocompgpu/calibrated_maps.hpp`; see `docs/CALIBRATED_MAPS.md` and
+`data/validation/surge_line_map_template.csv`. These establish software
+behavior only, not a qualified protection boundary.
+
+The current solver does not predict rotating stall or surge. A bounded
+rectilinear map can now interpolate corrected surge flow over corrected speed
+and vane position and provide a margin to the controller. Obtain a
+speed-dependent surge line for the selected unit from manufacturer performance
+data, commissioning tests, or another independently validated source. An open
+TUM dissertation provides a different-machine vane/surge dataset useful for
+checking data processing and map interfaces; it cannot qualify this machine's
+surge limit. Include IGV position and gas
 correction where the source requires them. Define the corrected flow/head
 coordinates, surge margin, uncertainty, interpolation range, and behavior
 outside that range. Keep choke and driver limits distinct from the surge line.
@@ -199,16 +221,21 @@ Keep the validated scalar CPU model as the oracle. GPU or other accelerator work
 
 ## Working sequence
 
-1. A0: freeze the port, flow, sensor, and control contract.
-2. A1: demonstrate steady variable-speed pressure and net-flow control.
-3. B0: run the ReLU baseline and independent held-out-speed-line qualification.
-4. A2: add guide-vane physics and speed/vane maps for the selected machine.
-5. A3: add the recycle branch with suction mixing and exported-flow accounting.
-6. A4: obtain and qualify an independent surge map; anti-surge stays disabled
-   until this gate passes.
-7. A5: integrate the anti-surge override and unit/pipeline operating limits.
-8. A6: run transient pipe–compressor–controller comparisons with refinement.
-9. B1–B3: expand, qualify, and compare the surrogate through the same
-   component contract.
-10. A7: add station-level multiple-unit dispatch if the use case requires it.
-11. Pursue experimental validation and acceleration against identified needs.
+1. Run the PengRobinson leave-one-complete-speed-line-out qualification.
+   Review interior interpolation and endpoint extrapolation separately, then
+   choose a pipeline-use error gate before fitting for that use.
+2. The multi-step recycle disturbance test and map-interface test pass on
+   Dell. Compare the transient under time-step refinement; add measured
+   controller/actuator dynamics when data become available.
+3. Digitize the open TUM variable-IGV and surge figures with uncertainty and
+   provenance as a cross-machine software/data-pipeline screen.
+4. Obtain the selected compressor's own guide-vane, recycle valve/cooler, and
+   surge-map data; replace exploratory callbacks with bounded calibrated maps.
+5. Keep anti-surge disabled until the selected-machine map is independently
+   qualified, then test override, limits, and actuator response.
+6. Compare a measured pipeline transient and determine thermal transport needs
+   before using the current isothermal adapter beyond screening.
+7. Qualify the surrogate against the reference solver over a bounded domain,
+   then compare it within the same pipe-coupling case.
+8. Add station dispatch and acceleration only where the validated application
+   requires them.

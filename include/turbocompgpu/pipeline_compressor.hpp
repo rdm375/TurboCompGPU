@@ -11,6 +11,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 namespace turbocompgpu {
@@ -25,6 +26,9 @@ struct CompressorPipePort {
 struct GuideVaneEffects {
     double inlet_prewhirl_m_s = 0.0;
     double entropy_generation_j_kg_k = 0.0;
+    // Conservative absolute-error bounds; zero preserves legacy fixed-vane use.
+    double inlet_prewhirl_uncertainty_m_s = 0.0;
+    double entropy_generation_uncertainty_j_kg_k = 0.0;
 };
 
 struct GuideVaneOperatingDomain {
@@ -89,7 +93,11 @@ struct GuideVaneMap {
             angle_deg, speed_rpm, compressor_flow_kg_s, inlet_state);
         if (!(std::isfinite(effects.inlet_prewhirl_m_s) &&
               std::isfinite(effects.entropy_generation_j_kg_k) &&
-              effects.entropy_generation_j_kg_k >= 0.0)) {
+              effects.entropy_generation_j_kg_k >= 0.0 &&
+              std::isfinite(effects.inlet_prewhirl_uncertainty_m_s) &&
+              effects.inlet_prewhirl_uncertainty_m_s >= 0.0 &&
+              std::isfinite(effects.entropy_generation_uncertainty_j_kg_k) &&
+              effects.entropy_generation_uncertainty_j_kg_k >= 0.0)) {
             throw std::runtime_error(
                 "Guide-vane calibration returned invalid effects");
         }
@@ -158,6 +166,10 @@ public:
               std::isfinite(config_.fixed_vane_effects.inlet_prewhirl_m_s) &&
               std::isfinite(config_.fixed_vane_effects.entropy_generation_j_kg_k) &&
               config_.fixed_vane_effects.entropy_generation_j_kg_k >= 0.0 &&
+              std::isfinite(config_.fixed_vane_effects.inlet_prewhirl_uncertainty_m_s) &&
+              config_.fixed_vane_effects.inlet_prewhirl_uncertainty_m_s >= 0.0 &&
+              std::isfinite(config_.fixed_vane_effects.entropy_generation_uncertainty_j_kg_k) &&
+              config_.fixed_vane_effects.entropy_generation_uncertainty_j_kg_k >= 0.0 &&
               std::isfinite(config_.initial_outlet_temperature_k) &&
               config_.initial_outlet_temperature_k > 0.0 &&
               std::isfinite(config_.initial_outlet_pressure_pa) &&
@@ -202,7 +214,11 @@ public:
 
         if (!(std::isfinite(vane.inlet_prewhirl_m_s) &&
               std::isfinite(vane.entropy_generation_j_kg_k) &&
-              vane.entropy_generation_j_kg_k >= 0.0)) {
+              vane.entropy_generation_j_kg_k >= 0.0 &&
+              std::isfinite(vane.inlet_prewhirl_uncertainty_m_s) &&
+              vane.inlet_prewhirl_uncertainty_m_s >= 0.0 &&
+              std::isfinite(vane.entropy_generation_uncertainty_j_kg_k) &&
+              vane.entropy_generation_uncertainty_j_kg_k >= 0.0)) {
             throw std::invalid_argument(
                 "Invalid fixed-vane effects");
         }
@@ -626,6 +642,11 @@ struct RecycleValveMap {
         double opening,
         double suction_pressure_pa,
         const thermomodel::State& discharge_state)> calibrated_flow_kg_s;
+    // Optional conservative absolute-error bound from the valve calibration.
+    std::function<double(
+        double opening,
+        double suction_pressure_pa,
+        const thermomodel::State& discharge_state)> calibrated_flow_uncertainty_kg_s;
 
     void validate() const
     {
@@ -675,6 +696,24 @@ struct RecycleValveMap {
         }
         return value;
     }
+
+    double flow_uncertainty(
+        double opening,
+        double suction_pressure_pa,
+        const thermomodel::State& discharge_state) const
+    {
+        (void)flow(opening, suction_pressure_pa, discharge_state);
+        if (opening == 0.0) return 0.0;
+        if (!calibrated_flow_uncertainty_kg_s)
+            throw std::runtime_error(
+                "Recycle-valve map has no calibrated flow uncertainty");
+        const double uncertainty = calibrated_flow_uncertainty_kg_s(
+            opening, suction_pressure_pa, discharge_state);
+        if (!(std::isfinite(uncertainty) && uncertainty >= 0.0))
+            throw std::runtime_error(
+                "Recycle-valve map returned invalid flow uncertainty");
+        return uncertainty;
+    }
 };
 
 struct RecycleSteadyOptions {
@@ -698,6 +737,23 @@ struct RecycleSteadyResult {
     CompressorPipePort mixed_suction;
     CompressorComponentResult compressor;
 };
+
+template<class RecycleReturnModel>
+thermomodel::State evaluate_recycle_return_model(
+    RecycleReturnModel&& return_model,
+    const thermomodel::State& discharge,
+    double suction_pressure_pa,
+    double recycle_flow_kg_s)
+{
+    if constexpr (std::is_invocable_v<RecycleReturnModel,
+                      const thermomodel::State&, double, double>) {
+        return std::invoke(std::forward<RecycleReturnModel>(return_model),
+                           discharge, suction_pressure_pa, recycle_flow_kg_s);
+    } else {
+        return std::invoke(std::forward<RecycleReturnModel>(return_model),
+                           discharge, suction_pressure_pa);
+    }
+}
 
 template<class CompressorEvaluator, class RecycleReturnModel>
 RecycleSteadyResult solve_steady_recycle(
@@ -764,8 +820,11 @@ RecycleSteadyResult solve_steady_recycle(
         const auto& discharge = *result.compressor.outlet_static_state;
         const double requested_flow = valve_map.flow(
             valve_opening, fresh_inlet.static_pressure_pa, discharge);
-        auto requested_return = return_model(
-            discharge, fresh_inlet.static_pressure_pa);
+        // Three-argument return models can represent flow-dependent cooler
+        // behavior. Historical two-argument callbacks remain supported.
+        auto requested_return = evaluate_recycle_return_model(
+            return_model, discharge, fresh_inlet.static_pressure_pa,
+            requested_flow);
         if (!(std::isfinite(requested_return.T) && requested_return.T > 0.0 &&
               std::isfinite(requested_return.p) && requested_return.p > 0.0 &&
               std::isfinite(requested_return.h) &&
