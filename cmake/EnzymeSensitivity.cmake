@@ -14,6 +14,26 @@ set(
     "Path to the LLVM Enzyme pass plugin matching the selected Clang"
 )
 
+add_executable(
+    turbocompgpu_eckardt_full_stage_sensitivity_fd
+    "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/eckardt_full_stage_sensitivity_fd.cpp"
+)
+target_link_libraries(
+    turbocompgpu_eckardt_full_stage_sensitivity_fd
+    PRIVATE turbocompgpu
+)
+
+if(BUILD_TESTING)
+    add_test(
+        NAME eckardt_full_stage_sensitivity_fd
+        COMMAND turbocompgpu_eckardt_full_stage_sensitivity_fd
+    )
+    set_tests_properties(
+        eckardt_full_stage_sensitivity_fd
+        PROPERTIES TIMEOUT 1800
+    )
+endif()
+
 if(TURBOCOMP_ENABLE_ENZYME_SENSITIVITY)
     if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         message(FATAL_ERROR

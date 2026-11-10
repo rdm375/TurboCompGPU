@@ -33,18 +33,18 @@ cmake -S . -B build-enzyme-sensitivity \
   -DTURBOCOMP_ENZYME_PLUGIN=/path/to/LLVMEnzyme.so
 
 cmake --build build-enzyme-sensitivity \
-  --target turbocompgpu_eckardt_implicit_sensitivity_enzyme --parallel 8
+  --target turbocompgpu_eckardt_implicit_sensitivity_enzyme \
+           turbocompgpu_eckardt_full_stage_sensitivity_fd --parallel 8
 
 ctest --test-dir build-enzyme-sensitivity --output-on-failure \
-  -R '^eckardt_implicit_sensitivity_enzyme$'
+  -R '^eckardt_(implicit_sensitivity_enzyme|full_stage_sensitivity_fd)$'
 ```
 
-The output columns contain flow, objective, parameter, TLM derivative, adjoint
-derivative, finite-difference derivative, and the two pairwise differences.
-These are local derivatives of this impeller-only ideal-gas diagnostic. They
-are not calibrated parameter values and do not include the downstream diffuser
-or establish physical causality. The current three-point data remain too
-sparse to identify several correlated parameters uniquely.
+The impeller executable reports TLM, adjoint, and finite-difference derivatives.
+The full-stage executable reports centered finite differences from complete
+model re-solves. These are local sensitivities, not calibrated parameter values
+or proof of physical causality. The three operating points remain too sparse to
+identify several correlated parameters uniquely.
 
 ## Differentiability scope
 
@@ -56,3 +56,25 @@ Enzyme kernel; their first derivatives come from the `DifferentiableModel`
 contract. This keeps the differentiated kernel within one C++ translation
 unit and avoids requiring Enzyme to differentiate the separately compiled
 thermodynamics implementation.
+
+
+## Full-stage sensitivity screen
+
+`turbocompgpu_eckardt_full_stage_sensitivity_fd` perturbs the
+benchmark's `predict()` path at the same three 14,000 rpm flows. Its objectives
+are complete-stage total-to-total pressure ratio and efficiency. It perturbs
+exit angle, exit width, blockage, mixing chi, individual impeller-loss scales,
+and diffuser-friction scale. The loss multipliers default to one, preserving
+the benchmark prediction.
+
+This screen uses centered finite differences of complete model re-solves, so
+it includes the repeated impeller-loss closure, throat search, and diffuser
+integration without asking Enzyme to differentiate the benchmark's complex
+container and aggregate types. It is a local numerical sensitivity screen,
+not physical validation or proof that a loss mechanism causes the experimental
+slope residual.
+
+The full-stage executable emits one centered derivative per objective,
+parameter, and flow. Its perturbations include the downstream variable-width
+diffuser, but remain local to these three operating points and screening loss
+model.
