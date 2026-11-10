@@ -457,7 +457,23 @@ struct LossModelOptions {
         HydraulicDiameterModel::Galvas;
     double mixing_chi = 0.15;
     double mixing_bstar = 1.0;
+    double skin_friction_multiplier = 1.0;
+    double blade_loading_multiplier = 1.0;
+    double incidence_multiplier = 1.0;
+    double clearance_multiplier = 1.0;
+    double mixing_multiplier = 1.0;
+    double disk_friction_multiplier = 1.0;
     bool use_shroud_inlet_speed_proxy = false;
+    // Equation-form alternatives for auditing empirical loss closures.
+    bool blade_loading_use_shroud_speed_consistently = false;
+    double blade_loading_loading_coefficient = 0.75;
+    bool incidence_use_mean_inlet_speed = false;
+    bool clearance_use_exit_meridional_speed = false;
+    bool disk_friction_use_diameter_clearance_ratio = false;
+    // Diagnostic: integrate local smooth-wall Cf(Re) along the passage.
+    bool distributed_skin_friction = false;
+    // Diagnostic: vary endpoint passage geometry and use continuity for Vm.
+    bool geometry_continuity_skin_friction = false;
     // The source dataset gives beta2b=-30 deg; loss correlations use its
     // 30-deg magnitude. Keep this separate from the solver's complementary
     // 60-deg velocity-triangle angle.
@@ -478,6 +494,101 @@ double schlichting_fanning_factor(double reynolds)
         return high;
     const double weight = (reynolds - 2.0e5) / 1.0e5;
     return low * (1.0 - weight) + high * weight;
+}
+
+double distributed_skin_friction_loss(
+    double path_length_m,
+    double hydraulic_diameter_m,
+    double inlet_relative_speed_m_s,
+    double exit_relative_speed_m_s,
+    double inlet_density_kg_m3,
+    double exit_density_kg_m3,
+    double inlet_temperature_k,
+    double exit_temperature_k)
+{
+    // First-order passage screen: W, rho and T vary linearly from the
+    // mean inlet state to the exit state; Dh stays at the existing Galvas
+    // equivalent diameter. Integrate dh_sf = 2 Cf(Re) W^2 ds / Dh.
+    constexpr int intervals = 64;
+    const double dx = 1.0 / intervals;
+    double weighted_integrand_sum = 0.0;
+
+    for (int i = 0; i <= intervals; ++i) {
+        const double x = static_cast<double>(i) / intervals;
+        const double speed = inlet_relative_speed_m_s + x *
+            (exit_relative_speed_m_s - inlet_relative_speed_m_s);
+        const double density = inlet_density_kg_m3 + x *
+            (exit_density_kg_m3 - inlet_density_kg_m3);
+        const double temperature = inlet_temperature_k + x *
+            (exit_temperature_k - inlet_temperature_k);
+        const double reynolds = density * speed * hydraulic_diameter_m /
+            air_viscosity_sutherland(temperature);
+        const double integrand =
+            schlichting_fanning_factor(reynolds) * speed * speed;
+        const double weight = (i == 0 || i == intervals)
+            ? 1.0 : (i % 2 == 0 ? 2.0 : 4.0);
+        weighted_integrand_sum += weight * integrand;
+    }
+
+    const double path_average = dx * weighted_integrand_sum / 3.0;
+    return 2.0 * (path_length_m / hydraulic_diameter_m) * path_average;
+}
+
+double geometry_continuity_skin_friction_loss(
+    double path_length_m,
+    double inlet_hydraulic_diameter_m,
+    double exit_hydraulic_diameter_m,
+    double inlet_area_m2,
+    double exit_area_m2,
+    double mass_flow_kg_s,
+    double inlet_density_kg_m3,
+    double exit_density_kg_m3,
+    double inlet_temperature_k,
+    double exit_temperature_k,
+    double inlet_radius_m,
+    double exit_radius_m,
+    double angular_speed_rad_s,
+    double inlet_swirl_velocity_m_s,
+    double exit_swirl_velocity_m_s)
+{
+    // Screening path: interpolate area, rectangular-endpoint Dh, radius,
+    // thermodynamic state, and absolute swirl. Continuity supplies Vm(x);
+    // the velocity triangle supplies W(x). This is not energy-closed.
+    constexpr int intervals = 64;
+    const double dx = 1.0 / intervals;
+    double weighted_integrand_sum = 0.0;
+
+    for (int i = 0; i <= intervals; ++i) {
+        const double x = static_cast<double>(i) / intervals;
+        const double area = inlet_area_m2 + x * (exit_area_m2 - inlet_area_m2);
+        const double dh = inlet_hydraulic_diameter_m + x *
+            (exit_hydraulic_diameter_m - inlet_hydraulic_diameter_m);
+        const double density = inlet_density_kg_m3 + x *
+            (exit_density_kg_m3 - inlet_density_kg_m3);
+        const double temperature = inlet_temperature_k + x *
+            (exit_temperature_k - inlet_temperature_k);
+        const double radius = inlet_radius_m + x *
+            (exit_radius_m - inlet_radius_m);
+        const double swirl = inlet_swirl_velocity_m_s + x *
+            (exit_swirl_velocity_m_s - inlet_swirl_velocity_m_s);
+
+        const double meridional_speed = mass_flow_kg_s / (density * area);
+        const double blade_speed = angular_speed_rad_s * radius;
+        const double relative_speed = std::hypot(
+            meridional_speed, swirl - blade_speed);
+        const double reynolds = density * relative_speed * dh /
+            air_viscosity_sutherland(temperature);
+        const double integrand =
+            schlichting_fanning_factor(reynolds) *
+            relative_speed * relative_speed / dh;
+
+        const double weight = (i == 0 || i == intervals)
+            ? 1.0 : (i % 2 == 0 ? 2.0 : 4.0);
+        weighted_integrand_sum += weight * integrand;
+    }
+
+    const double path_average = dx * weighted_integrand_sum / 3.0;
+    return 2.0 * path_length_m * path_average;
 }
 
 ImpellerLossEstimate estimate_impeller_losses(
@@ -534,24 +645,28 @@ ImpellerLossEstimate estimate_impeller_losses(
     // Meroni's inlet metal angles are referenced to the meridional axis.
     // Convert the relative-velocity triangle to that same convention.
     const double U1m = omega * r1m;
+    const double W1m = std::hypot(
+        Vm1, request.operating.inlet_prewhirl - U1m);
     const double beta1_flow = std::atan2(
         U1m - request.operating.inlet_prewhirl, Vm1);
     const double incidence_angle = beta1_flow - beta1_opt;
-    const double incidence_loss = 0.5 * W1s * W1s *
+    const double incidence_speed = options.incidence_use_mean_inlet_speed
+        ? W1m : W1s;
+    const double incidence_loss = 0.5 * incidence_speed * incidence_speed *
         std::pow(std::sin(incidence_angle), 2.0);
     const double Ctheta2 = request.operating.slip_factor *
         (U2 - Vm2 / std::tan(beta2));
     const double W2 = std::hypot(Vm2, Ctheta2 - U2);
-    // Jansen's second mean-speed candidate uses the operating throat speed,
-    // not the shroud inlet speed. The latter remains selectable only for the
-    // side-by-side proxy diagnostic.
+    // Jansen's published mean relative velocity is the baseline.
+    // Preserve the prior RMS/shroud proxy only as a diagnostic alternative.
+    const double Wbar_jansen = (2.0 * W2 + W1h + W1s) / 4.0;
     const double Wbar_from_mean_inlet =
         std::sqrt(0.5 * (W1 * W1 + W2 * W2));
-    const double throat_relative_speed = options.use_shroud_inlet_speed_proxy
-        ? W1s : throat.relative_speed_m_s;
-    const double Wbar_from_throat =
-        std::sqrt(0.5 * (throat_relative_speed * throat_relative_speed + W2 * W2));
-    const double Wbar = std::max(Wbar_from_mean_inlet, Wbar_from_throat);
+    const double Wbar_from_shroud =
+        std::sqrt(0.5 * (W1s * W1s + W2 * W2));
+    const double Wbar = options.use_shroud_inlet_speed_proxy
+        ? std::max(Wbar_from_mean_inlet, Wbar_from_shroud)
+        : Wbar_jansen;
 
     // Galvas hydraulic diameter: the sum of the outlet and inducer
     // contributions, using the published blade-angle and annulus geometry.
@@ -603,15 +718,32 @@ ImpellerLossEstimate estimate_impeller_losses(
         air_viscosity_sutherland(mean_temperature);
     const double cf = schlichting_fanning_factor(reynolds);
     const double friction_factor = 4.0 * cf;
-    const double skin_friction_loss = 4.0 * cf *
-        (blade_length / hydraulic_diameter) * Wbar * Wbar;
+    // Published Jansen relation: dh_sf = 2 Cf (L_H / d_H) Wbar^2.
+    // friction_factor remains the corresponding Darcy factor (4 Cf).
+    const double skin_friction_loss = options.geometry_continuity_skin_friction
+        ? geometry_continuity_skin_friction_loss(
+              blade_length, rectangular_dh1, rectangular_dh2,
+              inlet_area, exit_area, point.mass_flow,
+              inlet_state.rho, outlet_state.rho,
+              request.operating.inlet_temperature, trial.outlet_temperature,
+              r1m, r2, omega, request.operating.inlet_prewhirl, Ctheta2)
+        : options.distributed_skin_friction
+        ? distributed_skin_friction_loss(
+              blade_length, hydraulic_diameter,
+              0.5 * (W1h + W1s), W2,
+              inlet_state.rho, outlet_state.rho,
+              request.operating.inlet_temperature, trial.outlet_temperature)
+        : 2.0 * cf * (blade_length / hydraulic_diameter) * Wbar * Wbar;
 
     // Coppage diffusion-factor correlation for an impeller without splitters.
     const double diffusion_geometry =
         blades / pi * (1.0 - r1s / r2) + 2.0 * r1s / r2;
     const double work = std::max(0.0, trial.specific_work);
-    const double diffusion_factor = 1.0 - W2 / W1 +
-        0.75 * (work / (U2 * U2)) * (W2 / W1s) /
+    const double W1_blade_loading =
+        options.blade_loading_use_shroud_speed_consistently ? W1s : W1;
+    const double diffusion_factor = 1.0 - W2 / W1_blade_loading +
+        options.blade_loading_loading_coefficient *
+            (work / (U2 * U2)) * (W2 / W1_blade_loading) /
             diffusion_geometry;
     const double blade_loading_loss =
         0.05 * diffusion_factor * diffusion_factor * U2 * U2;
@@ -619,7 +751,8 @@ ImpellerLossEstimate estimate_impeller_losses(
     // Jansen tip-clearance leakage, with Eckardt A clearances from Meroni
     // Table 5: axial 0.235 mm and radial 0.190 mm.
     const double mean_clearance_m = 0.5 * (0.000235 + 0.000190);
-    const double C1m = Vm1;
+    const double C1m = options.clearance_use_exit_meridional_speed
+        ? Vm2 : Vm1;
     const double C2t = Ctheta2;
     const double clearance_loss = 0.6 * mean_clearance_m / b2 *
         std::abs(C2t) * std::sqrt(
@@ -649,21 +782,28 @@ ImpellerLossEstimate estimate_impeller_losses(
     // Daily-Nece disk friction, using Eckardt A backface clearance 0.235 mm.
     const double mu2 = air_viscosity_sutherland(outlet_state.T);
     const double Re2 = outlet_state.rho * U2 * r2 / mu2;
-    const double epsilon_backface_over_width = 0.000235 / b2;
+    const double epsilon_backface_ratio =
+        options.disk_friction_use_diameter_clearance_ratio
+            ? 2.0 * 0.000235 / (2.0 * r2)
+            : 0.000235 / b2;
     const double Kf = Re2 < 3.0e5
-        ? 3.7 * std::pow(epsilon_backface_over_width, 0.1) /
+        ? 3.7 * std::pow(epsilon_backface_ratio, 0.1) /
               std::sqrt(Re2)
-        : 0.102 * std::pow(epsilon_backface_over_width, 0.1) /
+        : 0.102 * std::pow(epsilon_backface_ratio, 0.1) /
               std::pow(Re2, 0.2);
     const double disk_loss = 0.25 *
         (0.5 * (inlet_state.rho + outlet_state.rho)) *
         U2 * U2 * U2 * r2 * r2 * Kf / point.mass_flow;
 
     const double internal_loss =
-        (options.skin_friction ? skin_friction_loss : 0.0) +
-        (options.blade_loading ? blade_loading_loss : 0.0) +
-        (options.incidence ? incidence_loss : 0.0) +
-        (options.clearance ? clearance_loss : 0.0);
+        (options.skin_friction
+             ? options.skin_friction_multiplier * skin_friction_loss : 0.0) +
+        (options.blade_loading
+             ? options.blade_loading_multiplier * blade_loading_loss : 0.0) +
+        (options.incidence
+             ? options.incidence_multiplier * incidence_loss : 0.0) +
+        (options.clearance
+             ? options.clearance_multiplier * clearance_loss : 0.0);
     double entropy_generation = internal_loss / mean_temperature;
     if (options.closure == LossClosure::EnthalpyEquivalentEntropy) {
         // Exact ideal-gas conversion of the loss enthalpy to entropy at the
@@ -721,7 +861,8 @@ Prediction predict(
     ThroatCapacityCache& throat_capacity_cache,
     bool include_skin_friction = true,
     bool include_blade_loading = true,
-    LossModelOptions loss_options = {})
+    LossModelOptions loss_options = {},
+    double diffuser_friction_multiplier = 1.0)
 {
     loss_options.skin_friction = include_skin_friction;
     loss_options.blade_loading = include_blade_loading;
@@ -769,9 +910,10 @@ Prediction predict(
     // mean-line formulation: apply their equivalent enthalpy rise at the
     // impeller exit pressure before solving the vaneless diffuser.
     const double external_loss =
-        (loss_options.mixing ? impeller_losses.mixing_j_kg : 0.0) +
-        (loss_options.disk_friction
-             ? impeller_losses.disk_friction_j_kg : 0.0);
+        (loss_options.mixing ? loss_options.mixing_multiplier *
+             impeller_losses.mixing_j_kg : 0.0) +
+        (loss_options.disk_friction ? loss_options.disk_friction_multiplier *
+             impeller_losses.disk_friction_j_kg : 0.0);
     const double outlet_static_temperature = impeller.outlet_temperature +
         external_loss / air.parameters().cp;
 
@@ -802,9 +944,9 @@ Prediction predict(
     const double hydraulic_diameter = 2.0 * width2;
     const double reynolds = state2.rho * inlet_speed *
         hydraulic_diameter / air_viscosity_sutherland(state2.T);
-    const double used_darcy_factor = darcy_factor < 0.0
+    const double used_darcy_factor = (darcy_factor < 0.0
         ? smooth_wall_darcy_factor(reynolds)
-        : darcy_factor;
+        : darcy_factor) * diffuser_friction_multiplier;
 
     const VanelessDiffuserInlet inlet{state2, vm2, whirl2, mass};
     const VariableWidthDiffuserGeometry diffuser_geometry{
@@ -946,6 +1088,7 @@ Prediction predict(
 
 } // namespace
 
+#ifndef TURBOCOMP_ECKARDT_NO_MAIN
 int main(int argc, char** argv)
 {
     try {
@@ -1338,10 +1481,22 @@ int main(int argc, char** argv)
                 std::string name;
                 LossModelOptions losses;
                 double diffuser_darcy_factor;
+                double diffuser_friction_multiplier = 1.0;
             };
             LossModelOptions full_losses;
+            LossModelOptions uniform_loss_075 = full_losses;
+            uniform_loss_075.skin_friction_multiplier = 0.75;
+            uniform_loss_075.blade_loading_multiplier = 0.75;
+            uniform_loss_075.incidence_multiplier = 0.75;
+            uniform_loss_075.clearance_multiplier = 0.75;
+            uniform_loss_075.mixing_multiplier = 0.75;
+            uniform_loss_075.disk_friction_multiplier = 0.75;
             LossModelOptions shroud_proxy = full_losses;
             shroud_proxy.use_shroud_inlet_speed_proxy = true;
+            LossModelOptions distributed_skin = full_losses;
+            distributed_skin.distributed_skin_friction = true;
+            LossModelOptions geometry_continuity_skin = full_losses;
+            geometry_continuity_skin.geometry_continuity_skin_friction = true;
             LossModelOptions no_skin = full_losses;
             no_skin.skin_friction = false;
             LossModelOptions no_blade = full_losses;
@@ -1369,8 +1524,28 @@ int main(int argc, char** argv)
             LossModelOptions rectangular_diameter = full_losses;
             rectangular_diameter.hydraulic_diameter_model =
                 HydraulicDiameterModel::RectangularEndpointApproximation;
+            LossModelOptions blade_loading_shroud_consistent = full_losses;
+            blade_loading_shroud_consistent
+                .blade_loading_use_shroud_speed_consistently = true;
+            LossModelOptions blade_loading_06 = blade_loading_shroud_consistent;
+            blade_loading_06.blade_loading_loading_coefficient = 0.6;
+            LossModelOptions incidence_mean_speed = full_losses;
+            incidence_mean_speed.incidence_use_mean_inlet_speed = true;
+            LossModelOptions clearance_exit_speed = full_losses;
+            clearance_exit_speed.clearance_use_exit_meridional_speed = true;
+            LossModelOptions disk_diameter_gap = full_losses;
+            disk_diameter_gap.disk_friction_use_diameter_clearance_ratio = true;
+            LossModelOptions combined_alternatives = blade_loading_06;
+            combined_alternatives.incidence_use_mean_inlet_speed = true;
+            combined_alternatives.clearance_use_exit_meridional_speed = true;
+            combined_alternatives.disk_friction_use_diameter_clearance_ratio = true;
             std::vector<AblationScenario> ablations{
                 {"all_losses_enthalpy_equivalent", full_losses, -1.0},
+                {"uniform_loss_multipliers_0p75", uniform_loss_075,
+                 -1.0, 0.75},
+                {"distributed_skin_friction_screen", distributed_skin, -1.0},
+                {"geometry_continuity_skin_friction_screen",
+                 geometry_continuity_skin, -1.0},
                 {"shroud_inlet_speed_proxy", shroud_proxy, -1.0},
                 {"legacy_mean_temperature_entropy", mean_temperature_closure, -1.0},
                 {"rectangular_endpoint_hydraulic_diameter", rectangular_diameter, -1.0},
@@ -1383,6 +1558,12 @@ int main(int argc, char** argv)
                 {"without_mixing_and_disk_friction", no_mixing_disk, -1.0},
                 {"without_impeller_losses", no_impeller, -1.0},
                 {"without_diffuser_friction", no_diffuser, 0.0},
+                {"audit_blade_loading_shroud_speed", blade_loading_shroud_consistent, -1.0},
+                {"audit_blade_loading_06_shroud_speed", blade_loading_06, -1.0},
+                {"audit_incidence_mean_speed", incidence_mean_speed, -1.0},
+                {"audit_clearance_exit_meridional_speed", clearance_exit_speed, -1.0},
+                {"audit_disk_diameter_gap_ratio", disk_diameter_gap, -1.0},
+                {"audit_combined_alternative_forms", combined_alternatives, -1.0},
             };
 
             // b* is diffuser-inlet depth / impeller-exit depth, not the
@@ -1441,7 +1622,8 @@ int main(int argc, char** argv)
                         request, air, g, scenario.diffuser_darcy_factor,
                         scenario.losses.incidence, throat_capacity_cache,
                         scenario.losses.skin_friction,
-                        scenario.losses.blade_loading, scenario.losses);
+                        scenario.losses.blade_loading, scenario.losses,
+                        scenario.diffuser_friction_multiplier);
                     const double error_pp = 100.0 *
                         (result.total_to_total_efficiency -
                          point.measured_efficiency);
@@ -1513,3 +1695,4 @@ int main(int argc, char** argv)
         return 1;
     }
 }
+#endif
