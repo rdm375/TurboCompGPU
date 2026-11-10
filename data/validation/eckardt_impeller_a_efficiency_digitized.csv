@@ -2,6 +2,7 @@
 # Approximate plot digitization from the DTU peer-reviewed postprint PDF, panel axes.
 # Columns: rotational_speed_rpm,mass_flow_kg_s,measured_total_to_total_efficiency
 # Digitization is approximate (about +/-0.01 absolute eta); no raw table was found.
+# The 16000 rpm, 6.00 kg/s marker was re-read at high resolution; the earlier 0.655 value was a misread.
 10000,2.34,0.847
 10000,2.61,0.865
 10000,3.11,0.885
@@ -22,4 +23,4 @@
 16000,4.31,0.840
 16000,4.88,0.857
 16000,5.44,0.859
-16000,6.00,0.655
+16000,6.00,0.865

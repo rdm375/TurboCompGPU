@@ -40,6 +40,8 @@ target_link_libraries(turbocompgpu
     INTERFACE thermogpu::thermo
 )
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/EnzymeSensitivity.cmake")
+
 if(BUILD_TESTING)
     add_executable(turbocompgpu_compressor_test
         tests/compressor_ideal_gas.cpp

@@ -25,14 +25,18 @@ loss mechanism in this efficiency calculation.
 
 ## Result
 
-The later smooth-wall inlet-Reynolds model with Galvas incidence completed all
-21 digitized points. Its mean signed and mean absolute efficiency errors were
-both **+4.47 percentage points**; maximum absolute error was **23.91 points**.
-The no-incidence variant gave **+5.18 points** mean signed/absolute error and
-**23.98 points** maximum absolute error. Thus the incidence correction makes
-only a small change to aggregate efficiency error; high-flow residuals remain
-large. Earlier lossless/impeller-loss-free screening numbers are superseded by
-this model variant.
+**Digitization correction (2026-11-09):** the 16,000 rpm, 6.00 kg/s
+efficiency marker in Figure 6(d) was re-read at high resolution and corrected
+from 0.655 to approximately 0.865 in the source CSV. The earlier value was a
+misread marker.
+
+All aggregate efficiency metrics and loss-sensitivity conclusions below were
+calculated using the old digitization and are superseded until regenerated.
+Re-score the saved model predictions and rerun the paired pressure/work audit
+before using those results to assess the model or select a loss closure. The
+corrected chart reading remains approximate; the source provides plotted
+symbols rather than a raw pointwise table, and the stated digitization
+uncertainty still applies.
 
 The pressure-ratio sweeps show that diffuser wall friction and impeller-loss
 terms both affect agreement, but a good pressure-ratio fit does not guarantee
@@ -46,6 +50,11 @@ up to 6.7 percentage points at high flow for their own mean-line model; that
 result is context, not a direct apples-to-apples target for this model.
 
 ## Paired pressure/work audit
+
+The figures below were regenerated using the corrected 0.865 digitization
+and the saved full-loss predictions. The pressure-ratio transcription and
+efficiency digitization remain separate sources, so interpret the decomposition
+as an accounting comparison rather than pointwise experimental closure.
 
 The pressure-ratio transcription and efficiency digitization are not paired
 measurements. To see how much of the efficiency/work discrepancy is associated
@@ -72,19 +81,22 @@ on the stated order of the split. It uses constant `cp=1004.5 J/(kg K)`,
 assumptions. Approximate efficiency digitization and the non-paired source data
 remain the main limitations.
 
-On the 17 paired points, the smooth-wall plus Galvas-incidence rows have
-interpolated pressure-ratio MAPE **2.539%** and mean work residual
-**−6.776 kJ/kg**. The ordered decomposition attributes **−2.942 kJ/kg** to
-pressure-ratio difference and **−3.834 kJ/kg** to the efficiency difference.
-The smooth-wall no-incidence comparison gives **2.257%** pressure-ratio MAPE
-and **−6.742 kJ/kg** mean work residual, split into **−2.609** and **−4.133
-kJ/kg**, respectively. Negative residual means the model predicts less work
-than implied by the digitized efficiency and interpolated pressure ratio.
+On the 17 paired points in the corrected run, the all-loss,
+smooth-wall plus Galvas-incidence rows have interpolated pressure-ratio MAPE
+**2.622%** and mean predicted-minus-implied work residual **+1.374 kJ/kg**
+(MAE **3.118 kJ/kg**). The ordered decomposition attributes **−3.004 kJ/kg**
+to pressure-ratio difference and **+4.378 kJ/kg** to the efficiency difference.
+The no-incidence version gives **2.489%** pressure-ratio MAPE and **+1.397
+kJ/kg** mean work residual, split into **−2.848** and **+4.245 kJ/kg**.
+The positive residual means predicted work exceeds work implied by the
+interpolated pressure ratio and corrected efficiency digitization.
 
-These figures indicate that pressure-ratio underprediction contributes to the
-work gap, while the predicted efficiency also remains too high. They do not
-identify which omitted loss mechanism causes the efficiency error. Run the
-audit after generating the incidence/choke efficiency comparison:
+The corrected accounting reverses the old efficiency contribution: pressure
+ratio underprediction contributes negatively, while the now-lower predicted
+efficiency contributes positively. They partly offset in the work residual.
+This remains an accounting decomposition, not proof of physical cause, because
+the pressure and efficiency data are separate, approximate sources. Run the
+audit after generating the corrected efficiency comparison:
 
 ```sh
 python3 scripts/audit_eckardt_efficiency_energy.py
