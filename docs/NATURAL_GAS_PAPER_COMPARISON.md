@@ -70,9 +70,15 @@ added a separate pointwise comparison against NIST's GERG-2008 implementation
 using the same 20 T,p points and the Lin composition. With enthalpy shifted to a
 common 298.15 K, 101.325 kPa state and specific heat ratio defined consistently
 as cp/cv, the present PR setup gives maximum deviations of 2.914% for Z, 3.004%
-for density, 19.512% for relative enthalpy, and 2.251% for cp/cv. All exceed
-the maximum values reported by Lin et al. This is a failed EOS qualification
-screen, not a reproduced paper score: the current PR setup assumes zero binary
+for density, 19.512% for relative enthalpy, and 2.251% for cp/cv. The Z,
+density, and cp/cv deviations exceed the corresponding Lin maxima. The
+enthalpy percentage is not directly comparable because Lin et al. do not state
+an enthalpy reference datum, while our comparison shifts each EOS to a shared
+reference state. On a reference-invariant diagnostic, the PR-versus-GERG
+discrepancy in the isothermal 6.5-to-8.0 MPa enthalpy change is 1.00–1.06
+kJ/kg (5.9–7.1% of the GERG change) across 293.15–308.15 K. This is not a
+compressor-work prediction. This is a failed EOS qualification screen, not a
+reproduced paper score: the current PR setup assumes zero binary
 interaction coefficients and constant ideal-gas component cp values, neither
 of which is specified by the paper. The exact comparison and pointwise results
 are recorded in

@@ -1,0 +1,13 @@
+# Source: A. Avramenko, A. Frolov, and J. Hämäläinen (2015), Journal of Applied Mathematics, Article 682469, Tables 1-2; DOI 10.1155/2015/682469.
+# License: Creative Commons Attribution License as stated on the publisher PDF first page.
+# Pressure ratios are ratios of section-average absolute static pressure to inlet section-average absolute pressure; they are not total-pressure ratios.
+# Impeller geometry common to all rows: 6944 rpm, 275 mm impeller diameter, 16 rotating blades.
+regime,mass_flow_kg_s,inlet_total_temperature_K,inlet_average_absolute_pressure_Pa,diffuser_inlet_average_static_pressure_ratio,diffuser_outlet_average_static_pressure_ratio
+1,0.629,294.6,101791,1.047,1.045
+2,0.553,294.8,101778,1.053,1.051
+3,0.495,294.8,101778,1.060,1.056
+4,0.434,294.9,101778,1.066,1.061
+5,0.312,295.0,101911,1.073,1.068
+6,0.266,295.0,101765,1.076,1.069
+7,0.116,295.1,101765,1.076,1.068
+8,0.105,295.2,101765,1.075,1.067

@@ -16,21 +16,35 @@ different quantity and is retained in the pointwise CSV for clarity.
 |---|---:|---:|---:|
 | Compressibility factor Z | 2.914% | 2.659% | 1.09% |
 | Density | 3.004% | 2.735% | 1.11% |
-| Enthalpy relative to common reference | 19.512% | 13.209% | 1.35% |
+| Enthalpy relative to common reference | 19.512% | 13.209% | Not directly comparable* |
 | Specific heat ratio cp/cv | 2.251% | 1.998% | 1.72% |
 | cp (diagnostic; not reported in Lin's table) | 0.723% | 0.373% | — |
 | cv (diagnostic; not reported in Lin's table) | 2.906% | 2.055% | — |
 
-The PR screen exceeds all four maximum-deviation values reported by Lin et al.
-This does **not** reproduce or contradict their private pointwise comparison:
-the paper publishes aggregate errors only, and this implementation uses zero
-binary interaction coefficients plus constant ideal-gas component heat
-capacities because their parameter values are not published. The result does
-show that the current mixture configuration is not qualified against GERG-2008
-and must not be presented as a passing natural-gas EOS gate. The discrepancy is
-not evidence by itself of a coding defect in the PR cubic; missing/approximate
-mixture parameters and caloric assumptions need to be resolved before assigning
-cause.
+The PR screen exceeds the Lin paper's reported maximum deviations for Z,
+density, and cp/cv. The enthalpy percentage is not a like-for-like score: the
+paper does not state its enthalpy reference datum, while this comparison shifts
+each EOS to a common 298.15 K, 101.325 kPa state. Since enthalpy itself has an
+arbitrary additive reference, the 19.512% figure must not be compared directly
+with the paper's 1.35% limit. The matched-reference values still permit
+reference-invariant enthalpy-difference checks. Across each isotherm, the
+6.5-to-8.0 MPa enthalpy-change discrepancy is 1.00–1.06 kJ/kg, or 5.9–7.1%
+of the GERG enthalpy change; this is a property-grid diagnostic, not a
+compressor-work prediction.
+
+This does **not** reproduce or contradict the paper's private pointwise
+comparison: Lin et al. publish aggregate errors only, and this implementation
+uses zero binary interaction coefficients plus constant ideal-gas component
+heat capacities because their parameter values are not published. The three
+directly comparable failures mean this PR mixture is not qualified against
+GERG-2008 and must not be presented as a passing natural-gas EOS gate. The
+discrepancy is not evidence by itself of a coding defect in the PR cubic;
+missing/approximate mixture parameters and caloric assumptions need to be
+resolved before assigning cause.
+
+\*The paper reports a 1.35% maximum deviation for specific enthalpy, but does
+not document the enthalpy reference convention needed to compare that
+percentage with the common-reference result here.
 
 Reproduction:
 
