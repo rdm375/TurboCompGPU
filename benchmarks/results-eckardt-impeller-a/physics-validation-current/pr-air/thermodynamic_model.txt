@@ -1,0 +1,8 @@
+property_model=pr-air
+published_loss_sets=diagnostic scenarios in loss_term_ablation.csv
+eos=Peng-Robinson pseudo-pure dry air
+molar_mass_kg_mol=0.0289652
+critical_temperature_K=132.53
+critical_pressure_Pa=3786000
+acentric_factor=0.035
+ideal_cp_J_kg_K=1004.5

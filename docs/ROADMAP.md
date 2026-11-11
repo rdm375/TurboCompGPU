@@ -1,7 +1,7 @@
 # TurboCompGPU Development Roadmap
 
-Reviewed: 2026-11-09
-Code status reference: default branch main, latest reviewed code commit 3980363d090d3b532cf50d437f8b90cfc9a0fa21
+Reviewed: 2026-11-11
+Code status reference: branch main, base commit bcb7b89 (2026-11-06)
 
 ## Project goals
 
@@ -21,164 +21,44 @@ These goals share data and interfaces, but they are not the same deliverable. Th
 | Impeller/diffuser complete-stage model | Implemented with numerical verification | Frictional and variable-width diffuser work is documented; empirical calibration is still missing |
 | Incidence closure | Experimental model extension | 105 paired points across three thermodynamic configurations; coefficient not experimentally calibrated |
 | Diffuser profile geometry | Infrastructure present | PCHIP hub/shroud profiles and tests; actual NASA HECC hot-wall geometry is not reconstructed |
-| Operator control modes | **Implemented; gains remain application-specific** | Manual speed, suction/discharge pressure, and net-export-flow modes are available. Pipe-coupled adapters and saturation behavior are tested. |
-| Variable guide vanes | **Bounded map loader tested; selected-machine data missing** | `calibrated_map_interpolation` passed on Dell. Rectilinear interpolation supplies prewhirl, entropy generation, and uncertainty bounds without extrapolation. |
-| Recycle flow | **Coupling and bounded hardware-map loaders tested; selected-unit data missing** | `calibrated_map_interpolation` passed on Dell. Valve flow and flow-dependent cooler return can be loaded from complete grids; hardware calibration remains absent. |
-| Surge map and margin | **Bounded interpolation tested; no qualified machine map** | `calibrated_map_interpolation` passed on Dell. Anti-surge still requires a qualified selected-unit map; keep protection disabled without one. |
-| Pipeline coupling | **Two-pipe adapter implemented; transient qualification incomplete** | Optional `pipe_sim` integration supports recycle; each segment currently uses fixed temperature and compressibility. |
-| ReLU surrogate | **Training/export and leave-one-speed-line-out workflow implemented; qualification result pending** | Whole-line interior interpolation and endpoint extrapolation are reported separately. No saved current report or pipeline error gate is recorded. |
+| Pipeline coupling | **Not implemented** | No end-to-end compressor boundary connected to a transient pipe model |
+| ReLU surrogate | **Preliminary baseline added; not yet qualified** | A trainer fits current C++-generated samples; its structured holdout results have not yet been recorded, and it is not connected to the pipeline |
 | GPU execution | **Not implemented** | Current code and reported timings are CPU based |
-| Experimental validation | **Partial screens; machine hardware maps still missing** | Eckardt A/B, Choi–Kang, and Sandia screens exist. TUM source-reported IGV summaries are transcribed, while pointwise speed-line and surge coordinates still need digitization. TUM hardware differs from the current rotor. NASA HECC archive access failed with HTTP 403 in the 2026-10-13 handoff. |
+| Experimental validation | **Air screening only; natural-gas validation not complete** | Eckardt A/B and Choi–Kang provide limited air-compressor evidence. The current Eckardt runner supports ideal gas and PR air, not a specified natural-gas mixture. Exit criteria and the accelerator reference gate are in [`PHYSICS_VALIDATION_EXIT_GATE.md`](PHYSICS_VALIDATION_EXIT_GATE.md). |
 
 For supporting details, see [Project Status](PROJECT_STATUS.md) and the linked milestone reports.
-The current held-out-surrogate, transient-test, and physical-data acquisition
-record is in [Project gap-close data and run record](PROJECT_GAP_CLOSE_2026-11.md).
-
-The active priority is component-wise validation of the numerical compressor
-model. See [Numerical model validation](NUMERICAL_MODEL_VALIDATION.md) for the
-campaign and evidence boundaries. Surrogate qualification is deferred until
-the numerical reference model's evidence and validity domain are reviewed.
 
 ## Workstream A — Connect a compressor to a pipeline
 
-The operator selects a primary process objective; the control layer changes a
-machine actuator to pursue it. The network determines the resulting pressure
-and flow together with the compressor. A compressor operating-point solver
-alone cannot close this loop.
+### A0 — Define the component contract
 
-### A0 — Freeze the unit and pipeline-port contract
+Use the existing flow-station and operating-point concepts to define a small, explicit component interface.
 
-Specify inlet and outlet measurement locations, pressure conventions, mass-flow
-signs, thermodynamic states, control modes, actuator limits, and failure
-behavior. Distinguish:
+The contract should identify:
 
-- **Pipeline export flow:** net flow delivered downstream; this is the
-  measurement for a station flow setpoint.
-- **Compressor through-flow:** flow through the impeller and diffuser; this is
-  the mass flow supplied to the compressor physics model.
-- **Recycle flow:** gas diverted from compressor discharge back to suction.
-  With recycle, compressor through-flow exceeds pipeline export flow.
+- Inlet state and flow variables supplied by the pipe model.
+- Compressor controls and configuration, including rotational speed.
+- Outlet state and shaft-work or power outputs returned to the pipe/station model.
+- Solver status, diagnostics, and out-of-domain or invalid-state behavior.
+- The thermodynamic property model and static/total-state conventions at both boundaries.
 
-Use static pressure at defined pipe taps for control feedback. Keep those
-sensor values distinct from total pressures returned by compressor-map
-postprocessing.
+**Acceptance:** one documented API or adapter with unit tests for state conversion, mass-flow sign/convention, and energy consistency. Keep the interface independent of a GPU backend and avoid requiring a full station-control system in this first step.
 
-**Acceptance:** a documented component/control data contract with units,
-measurement locations, flow sign, thermodynamic state convention, actuator
-configuration, and explicit invalid/out-of-domain behavior.
+### A1 — Steady pipe–compressor–pipe case
 
-### A1 — Couple a variable-speed compressor in steady operation
+Place one compressor between upstream and downstream pipe sections. First establish a reproducible steady operating point and verify that the coupled pressure and flow agree with the component’s standalone result.
 
-Connect the compressor between upstream and downstream pipe sections. Use the
-network solution to determine mass flow and boundary pressures. Implement
-discharge-pressure, suction-pressure, and pipeline-export-flow control modes;
-the controller adjusts shaft speed within driver and compressor limits.
-Manual-speed mode remains available for fixed-command studies.
+**Acceptance:** a small deterministic example with convergence diagnostics and mass/energy balance checks at the component boundary.
 
-**Acceptance:** one deterministic steady pipe–compressor–pipe case for each
-automatic setpoint mode; mass and energy close at the component boundary;
-setpoints track when feasible; saturated commands report that the target is
-unreachable within the configured speed/power envelope.
+### A2 — Transient single-compressor case
 
-### A2 — Qualify guide-vane actuation against physical data
+Connect the same component to the transient pipe solver. Exercise a controlled change in demand or compressor speed and verify time-step behavior, coupling convergence, and conservation.
 
-The component accepts a vane angle only when a bounded `GuideVaneMap` is
-supplied. A rectilinear CSV loader can now bind measured prewhirl, entropy,
-and conservative uncertainty bounds to the component. The remaining work is
-to populate and validate that map for the selected machine. An open TUM dissertation reports stage maps at IGV settings
-−20°, 0°, 20°, 40°, and 60° for three vane designs, plus surge tests. Table
-3.3 and the numerical comparisons stated in the Figure 3.17 discussion are
-transcribed in `data/validation/tum_chen_2017_vigv_reported_results.csv`.
-Per-speed curve coordinates and surge-line digitization are still outstanding.
-Its compressor differs from the project's rotor: use it to check data import,
-interpolation, uncertainty, and software behavior, not to calibrate another
-machine's vane map.
+**Acceptance:** a documented transient case with repeatable results, explicit failure handling, and comparison against a tighter-coupling or refined-step reference.
 
-Generate and validate operating maps across speed and vane position. Retain a
-fixed-vane configuration for machines without IGVs.
+### A3 — Station behavior only when needed
 
-**Acceptance:** vane end stops and invalid positions are handled; the fixed-vane
-case recovers the existing model; representative vane/speed points agree with
-independent data for the selected compressor. Cross-machine literature screens
-remain labeled as software/data-pipeline checks.
-
-### A3 — Model recycle flow and its thermodynamics
-
-The steady recycle solver and two-pipe adapter provide a discharge-to-suction
-branch, suction mixing, and separate fresh, recycle, compressor-through-flow,
-and net-export values. Complete-grid loaders now cover measured valve flow and
-a flow-dependent cooler return state. Physical valve and cooler tables remain
-caller-supplied until selected-unit calibration data are available. A multi-step demand/valve disturbance test
-has been added after the existing single-step mass and energy checks; the Dell
-integration test passed on 2026-11-09. Time-step refinement remains outstanding.
-
-**Acceptance:** zero valve opening recovers the non-recycle case; recycle mass
-and energy balances close at every transient step; flow tends to zero when the
-valve is closed; valve limits are explicit; flow control uses net export while
-the compressor map uses internal through-flow; time-step refinement is
-reported.
-
-### A4 — Obtain and qualify a surge-limit map
-
-The table loader and interpolation path are implemented in
-`include/turbocompgpu/calibrated_maps.hpp`; see `docs/CALIBRATED_MAPS.md` and
-`data/validation/surge_line_map_template.csv`. These establish software
-behavior only, not a qualified protection boundary.
-
-The current solver does not predict rotating stall or surge. A bounded
-rectilinear map can now interpolate corrected surge flow over corrected speed
-and vane position and provide a margin to the controller. Obtain a
-speed-dependent surge line for the selected unit from manufacturer performance
-data, commissioning tests, or another independently validated source. An open
-TUM dissertation provides a different-machine vane/surge dataset useful for
-checking data processing and map interfaces; it cannot qualify this machine's
-surge limit. Include IGV position and gas
-correction where the source requires them. Define the corrected flow/head
-coordinates, surge margin, uncertainty, interpolation range, and behavior
-outside that range. Keep choke and driver limits distinct from the surge line.
-
-Do not infer a surge limit from solver convergence or from the current 441-row
-training grid alone.
-
-**Acceptance:** source and units are recorded; map interpolation is checked
-against withheld map points; every supported query has a bounded margin and
-uncertainty; out-of-map queries return an explicit unavailable/invalid result.
-Until this gate passes, anti-surge control remains unavailable.
-
-### A5 — Integrate anti-surge override and operating limits
-
-Use the qualified margin provider as a separate fast protection loop. It opens
-the recycle valve as the operating point approaches the configured control
-line, with suitable margin, rate limits, and actuator response. Anti-surge
-action takes priority over the normal pressure/flow objective. Add explicit
-driver speed and power limits, maximum discharge pressure, and discharge
-temperature limits from the selected unit and downstream pipeline
-specification. Treat shutdown trips as separate protection logic.
-
-**Acceptance:** disturbance and setpoint-change scenarios preserve the
-qualified surge margin; override priority, valve travel/rate limits, saturation,
-and missing-map behavior are exercised; primary-loop windup is controlled
-during override. No test may claim surge protection with an absent or
-out-of-domain map.
-
-### A6 — Validate transient pipe–compressor–controller coupling
-
-Run the same unit with the pipe solver in transient operation. Define the
-controller sample period, actuator lag/ramp response, and whether the
-compressor is modeled quasi-steadily at each pipe time step. Exercise changes
-in demand, pressure setpoint, speed/IGV, and recycle action. Compare time-step
-refinement and coupling iteration.
-
-**Acceptance:** repeatable transient traces report pressure/flow tracking,
-speed and valve commands, surge margin when qualified, mass/energy residuals,
-controller saturation, and solver failures. The steady case remains a
-regression reference.
-
-### A7 — Expand to station behavior only after the single unit
-
-Add parallel-unit load sharing, unit starts/stops, bypasses, and station
-dispatch only when the single-compressor coupling is stable. Keep station
-dispatch separate from the unit-level pressure/flow and anti-surge loops.
+Add parallel units, recycle/bypass, controls, and station-level operating logic only when the pipeline use case requires them. Keep those features distinct from the first single-compressor coupling.
 
 ## Workstream B — Reproduce and qualify the ReLU interpolation idea
 
@@ -212,61 +92,37 @@ Expose the surrogate through the same component contract as the reference solver
 
 ## Model credibility work
 
-This pass focuses on the numerical compressor model. Keep these claims
-distinct:
+These items improve the reference model but do not block the first software integration prototype:
 
-- Numerical verification checks equations, derivatives, conservation,
-  independent formulations, tolerances, and solver failure behavior.
-- Component validation compares the same measured quantity at matched
-  operating conditions and measurement planes.
-- Calibration fits declared training data; validation scores untouched data.
-- Pipe integration checks network closure and transient behavior, but does not
-  establish compressor accuracy against a test rig.
-
-The current evidence does not include a geometry-complete independent
-full-stage dataset. Follow the component sequence in
-[Numerical model validation](NUMERICAL_MODEL_VALIDATION.md), and do not turn
-limited or cross-family screens into a broad compressor qualification.
-
-Remaining data limits:
-
-- NASA HECC archive access returned HTTP 403 in the 2026-10-13 handoff.
-- Eckardt A/B, Choi–Kang, and Sandia use different assumptions and support
-  component/performance screens only.
-- RADIVER requires authorized local data and must remain subject to its signed
-  license.
-- Selected-machine guide-vane, recycle hardware, and surge maps are missing.
-- The passage_turning_sensitivity test remains disabled; report that status
-  and rerun the complete suite after resolving it.
+- Download, inventory, and process the NASA HECC public archive; record its checksum and use its independent multi-speed data for the campaign in [`VALIDATION_CAMPAIGN.md`](VALIDATION_CAMPAIGN.md). Earlier 2026-10-13 access attempts returned HTTP 403; the current official archive URL and guide have since been located, but local retrieval and extraction still need confirmation.
+- Reconstruct actual hub/shroud geometry and compare diffuser predictions with experimental data.
+- Replace exploratory or prescribed loss closures with calibrated or independently supported models.
+- Establish operating validity limits. The current work does not provide a predictive surge boundary; distinguish solver convergence from physical admissibility.
+- Resolve the intentionally disabled test and record a fresh full regression result for the latest source tree.
 
 ## Acceleration
 
-Keep the validated scalar CPU model as the oracle. GPU or other accelerator work is a later implementation track, justified by measured pipeline or surrogate workload. No GPU solver is currently implemented, and past CPU timings must not be presented as GPU performance.
+Keep a reproducible scalar CPU build as the oracle for backend parity. Accelerator parity and throughput experiments may proceed against that frozen oracle, but do not claim natural-gas predictive accuracy until the natural-gas validation gate in [`PHYSICS_VALIDATION_EXIT_GATE.md`](PHYSICS_VALIDATION_EXIT_GATE.md) passes. No GPU solver is currently implemented, and past CPU timings must not be presented as GPU performance.
 
 ## Working sequence
 
-1. Run all enabled CTest tests and record the commit, compiler, build/EOS
-   options, optional dependencies, disabled tests, and complete output.
-2. Complete numerical verification by component: thermodynamic states and
-   derivatives; nonlinear solver paths; impeller continuity, work, and
-   conservation; diffuser friction and geometry; choking; and complete-stage
-   integration.
-3. Run matched external screens for Eckardt A/B, Choi–Kang, and Sandia. Use
-   CoolProp HEOS when available; keep RADIVER local under its license and
-   Schiffmann–Favrat labeled as a smoke test until its model inputs are
-   qualified.
-4. Report pointwise residuals, bias, MAE, maximum error, failures, measurement
-   uncertainty, station definitions, geometry, and EOS assumptions. Do not
-   combine separate datasets into one pass/fail score.
-5. Keep the Eckardt B 16,000 rpm line as its documented calibrated holdout.
-   Do not describe its fitted result as an uncalibrated or cross-family pass.
-6. Seek a geometry-complete independent full-stage dataset; revisit NASA HECC
-   access and pursue authorized RADIVER data.
-7. Resolve the disabled sensitivity test, then refine the multi-step recycle
-   pipe transient and compare it with measured behavior.
-8. Obtain selected-machine vane, recycle, and surge data before qualifying
-   hardware behavior or anti-surge protection.
-9. Resume surrogate qualification after reviewing the numerical model's
-   component evidence and validity domain.
-10. Add station dispatch and acceleration only where the validated application
-    requires them.
+1. A0: define and test the component contract.
+2. B0: run and review the C++-sample ReLU baseline; recover legacy hackathon artifacts later if they become available.
+3. A1: run one steady coupled pipeline case.
+4. B1–B2: build the semi-realistic data set and qualify the ReLU interpolant.
+5. A2 and B3: run transient comparisons with both reference model and surrogate.
+6. Pursue experimental validation and acceleration against identified use cases.
+
+### Experimental validation checkpoint — 2026-11-08
+
+The radial-discharge Eckardt Impeller O traverse has been identified as
+cross-family data and is not used to qualify the backswept Impeller A model.
+The new same-family screen digitizes three 14,000 rpm points from Choi and
+Kang (1999), Figure 2, and compares predicted total pressure at `r/r2=1.075`
+and total temperature at `r/r2=1.687` using the source's mixed-plane
+efficiency definition. It gives 2.43% pressure-ratio MAPE, mean absolute
+temperature-rise-coefficient error 0.0531, and 7.65 percentage-points
+efficiency MAE. Treat these as a narrow screening result: the three source
+symbols were digitized from a plot, and they cover only one speed line. See
+[`ECKARDT_A_CHOI_KANG_1999_QUALIFICATION.md`](ECKARDT_A_CHOI_KANG_1999_QUALIFICATION.md)
+and `benchmarks/results-eckardt-impeller-a/choi-kang-1999-fig2/`.

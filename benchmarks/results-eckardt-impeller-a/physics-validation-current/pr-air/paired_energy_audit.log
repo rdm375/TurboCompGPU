@@ -1,0 +1,34 @@
+Efficiency digitization points: 21
+Energy audit thermodynamics: pr-air
+all_losses_enthalpy_equivalent (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.160%, work residual mean=1680.9 J/kg, work residual MAE=3256.7 J/kg, PR component mean=-1042.8 J/kg, eta component mean=2723.7 J/kg
+audit_blade_loading_06_shroud_speed (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.310%, work residual mean=1623.0 J/kg, work residual MAE=3219.1 J/kg, PR component mean=-1459.7 J/kg, eta component mean=3082.7 J/kg
+audit_blade_loading_shroud_speed (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.376%, work residual mean=1610.4 J/kg, work residual MAE=3211.2 J/kg, PR component mean=-1549.6 J/kg, eta component mean=3160.0 J/kg
+audit_clearance_exit_meridional_speed (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.175%, work residual mean=1678.0 J/kg, work residual MAE=3255.8 J/kg, PR component mean=-1065.2 J/kg, eta component mean=2743.2 J/kg
+audit_combined_alternative_forms (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.290%, work residual mean=1592.0 J/kg, work residual MAE=3191.2 J/kg, PR component mean=-1428.8 J/kg, eta component mean=3020.8 J/kg
+audit_disk_diameter_gap_ratio (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.159%, work residual mean=1645.8 J/kg, work residual MAE=3231.7 J/kg, PR component mean=-1039.9 J/kg, eta component mean=2685.7 J/kg
+audit_incidence_mean_speed (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.130%, work residual mean=1688.0 J/kg, work residual MAE=3254.6 J/kg, PR component mean=-991.8 J/kg, eta component mean=2679.8 J/kg
+correlation_exit_angle_60deg_screen (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.724%, work residual mean=1554.3 J/kg, work residual MAE=3202.5 J/kg, PR component mean=-1951.7 J/kg, eta component mean=3505.9 J/kg
+distributed_skin_friction_screen (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.159%, work residual mean=1679.0 J/kg, work residual MAE=3255.0 J/kg, PR component mean=-1056.7 J/kg, eta component mean=2735.7 J/kg
+geometry_continuity_skin_friction_screen (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.004%, work residual mean=1734.7 J/kg, work residual MAE=3278.5 J/kg, PR component mean=-654.7 J/kg, eta component mean=2389.5 J/kg
+legacy_mean_temperature_entropy (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.293%, work residual mean=1620.7 J/kg, work residual MAE=3218.6 J/kg, PR component mean=-1458.7 J/kg, eta component mean=3079.5 J/kg
+mixing_chi_0.05_bstar_1.00 (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.147%, work residual mean=-3530.3 J/kg, work residual MAE=3530.3 J/kg, PR component mean=-605.6 J/kg, eta component mean=-2924.8 J/kg
+mixing_chi_0.10_bstar_1.00 (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.152%, work residual mean=-1416.1 J/kg, work residual MAE=1775.5 J/kg, PR component mean=-785.4 J/kg, eta component mean=-630.7 J/kg
+mixing_chi_0.15_bstar_1.02 (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.161%, work residual mean=2396.7 J/kg, work residual MAE=3745.6 J/kg, PR component mean=-1101.3 J/kg, eta component mean=3498.0 J/kg
+mixing_chi_0.15_bstar_1.10 (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.226%, work residual mean=5641.4 J/kg, work residual MAE=6153.1 J/kg, PR component mean=-1362.1 J/kg, eta component mean=7003.4 J/kg
+mixing_chi_0.20_bstar_1.00 (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.245%, work residual mean=6005.6 J/kg, work residual MAE=6471.8 J/kg, PR component mean=-1390.9 J/kg, eta component mean=7396.5 J/kg
+mixing_chi_0.25_bstar_1.00 (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.621%, work residual mean=11931.7 J/kg, work residual MAE=11931.7 J/kg, PR component mean=-1847.4 J/kg, eta component mean=13779.1 J/kg
+mixing_chi_0.30_bstar_1.00 (Darcy f=Re-dependent): paired=17/21, PR MAPE=2.113%, work residual mean=20001.2 J/kg, work residual MAE=20001.2 J/kg, PR component mean=-2433.4 J/kg, eta component mean=22434.5 J/kg
+published_cross_geometry_set_2137 (Darcy f=Re-dependent): paired=17/21, PR MAPE=2.495%, work residual mean=-4248.3 J/kg, work residual MAE=4248.3 J/kg, PR component mean=-2867.3 J/kg, eta component mean=-1381.1 J/kg
+published_eckardt_a_set_2042 (Darcy f=Re-dependent): paired=17/21, PR MAPE=0.939%, work residual mean=-4063.2 J/kg, work residual MAE=4063.2 J/kg, PR component mean=719.9 J/kg, eta component mean=-4783.1 J/kg
+rectangular_endpoint_hydraulic_diameter (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.007%, work residual mean=1736.0 J/kg, work residual MAE=3280.3 J/kg, PR component mean=-645.1 J/kg, eta component mean=2381.1 J/kg
+shroud_inlet_speed_proxy (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.542%, work residual mean=1583.4 J/kg, work residual MAE=3199.7 J/kg, PR component mean=-1743.4 J/kg, eta component mean=3326.8 J/kg
+without_blade_loading (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.120%, work residual mean=1796.9 J/kg, work residual MAE=3351.2 J/kg, PR component mean=-202.2 J/kg, eta component mean=1999.1 J/kg
+without_clearance (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.089%, work residual mean=1716.1 J/kg, work residual MAE=3276.4 J/kg, PR component mean=-791.0 J/kg, eta component mean=2507.1 J/kg
+without_diffuser_friction (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.132%, work residual mean=1680.9 J/kg, work residual MAE=3256.7 J/kg, PR component mean=1105.0 J/kg, eta component mean=575.9 J/kg
+without_disk_friction (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.159%, work residual mean=1490.3 J/kg, work residual MAE=3121.5 J/kg, PR component mean=-1027.2 J/kg, eta component mean=2517.6 J/kg
+without_impeller_losses (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.643%, work residual mean=2087.8 J/kg, work residual MAE=3464.3 J/kg, PR component mean=1933.8 J/kg, eta component mean=154.0 J/kg
+without_incidence (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.070%, work residual mean=1702.2 J/kg, work residual MAE=3249.7 J/kg, PR component mean=-890.7 J/kg, eta component mean=2592.9 J/kg
+without_mixing (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.145%, work residual mean=-4686.5 J/kg, work residual MAE=4686.5 J/kg, PR component mean=-505.8 J/kg, eta component mean=-4180.7 J/kg
+without_mixing_and_disk_friction (Darcy f=Re-dependent): paired=17/21, PR MAPE=1.144%, work residual mean=-4877.0 J/kg, work residual MAE=4877.0 J/kg, PR component mean=-489.4 J/kg, eta component mean=-4387.6 J/kg
+without_skin_friction (Darcy f=Re-dependent): paired=17/21, PR MAPE=0.803%, work residual mean=1917.0 J/kg, work residual MAE=3357.9 J/kg, PR component mean=671.7 J/kg, eta component mean=1245.3 J/kg
+Audit CSV: benchmarks/results-eckardt-impeller-a/physics-validation-current/pr-air/paired_energy_audit.csv

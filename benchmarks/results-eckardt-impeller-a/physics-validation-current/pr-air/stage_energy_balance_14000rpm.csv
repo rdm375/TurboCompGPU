@@ -1,0 +1,13 @@
+PR-air stage energy audit; residual = stage Δh0 minus named work sum
+scenario,flow,stage_dh0,euler,external_addition,resid_vs_euler,resid_vs_euler_disk_recirc,resid_vs_euler_external
+all_losses_enthalpy_equivalent,3.300,+75.499,+66.675,+8.914,+8.824,+8.507,-0.089
+all_losses_enthalpy_equivalent,3.990,+72.868,+64.605,+8.332,+8.264,+8.003,-0.068
+all_losses_enthalpy_equivalent,4.560,+70.637,+62.821,+7.858,+7.816,+7.590,-0.042
+all_losses_enthalpy_equivalent,5.110,+68.402,+61.012,+7.399,+7.389,+7.189,-0.009
+all_losses_enthalpy_equivalent,5.690,+65.915,+58.978,+6.904,+6.937,+6.759,+0.033
+published_eckardt_a_set_2042,3.300,+67.766,+66.355,+1.426,+1.412,-0.014,-0.014
+published_eckardt_a_set_2042,3.990,+65.629,+64.411,+1.229,+1.219,-0.010,-0.010
+published_eckardt_a_set_2042,4.560,+63.820,+62.731,+1.095,+1.089,-0.006,-0.006
+published_eckardt_a_set_2042,5.110,+61.826,+60.856,+0.971,+0.970,-0.001,-0.001
+published_eckardt_a_set_2042,5.690,+59.858,+58.988,+0.867,+0.870,+0.004,+0.004
+Units: kJ/kg. This reports the implemented energy bookkeeping; it does not assume every equivalent loss term is external shaft work.

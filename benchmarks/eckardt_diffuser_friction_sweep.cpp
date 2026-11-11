@@ -5,6 +5,8 @@
 #include <turbocompgpu/vaneless_diffuser_variable_width.hpp>
 
 #include <thermomodel/ideal_gas.hpp>
+#include <thermomodel/caloric.hpp>
+#include <thermomodel/peng_robinson.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -14,6 +16,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
 #include <numbers>
 #include <optional>
 #include <sstream>
@@ -91,7 +94,8 @@ std::vector<MapPoint> read_map(const std::filesystem::path& path)
 
 ImpellerSystemGeometry geometry()
 {
-    // This benchmark uses backswept Eckardt Impeller A geometry.
+    // Eckardt backswept Impeller A. Do not compare this geometry directly
+    // against the radial-discharge Impeller O traverse dataset.
     constexpr double exit_diameter_m = 0.400;
     constexpr double exit_width_m = 0.026;
     constexpr double blade_count = 20.0;
@@ -114,7 +118,8 @@ NonlinearResidualScales scales()
 
 OperatingPointRequest make_request(
     const MapPoint& point,
-    const thermomodel::IdealGas& air,
+    const thermomodel::Model& air,
+    const thermomodel::DifferentiableModel& derivatives,
     const ImpellerSystemGeometry& g)
 {
     constexpr double T01 = 288.15;
@@ -122,38 +127,42 @@ OperatingPointRequest make_request(
     constexpr double beta_author_deg = 30.0;
     constexpr double blades = 20.0;
 
-    const double gamma = air.parameters().cp /
-        (air.parameters().cp - air.parameters().R);
+    const auto inlet_total = evaluate(air, T01, p01);
     const double area1 = effective_flow_area(
         inlet_annulus_area(g.inlet), g.inlet.blockage);
+    const double maximum_velocity = 0.999 *
+        evaluate_isentropic_sound_speed(derivatives, T01, p01).sound_speed;
+    const auto mass_residual = [&](double meridional_velocity) {
+        const auto state = state_from_hs(
+            air, inlet_total.h - 0.5 * meridional_velocity * meridional_velocity,
+            inlet_total.s, T01, p01);
+        return state.rho * area1 * meridional_velocity - point.mass_flow;
+    };
+    if (!(maximum_velocity > 0.0 && mass_residual(maximum_velocity) >= 0.0))
+        throw std::runtime_error("Inlet flow exceeds the subsonic mass-flow bracket");
 
-    double mach_lo = 0.0;
-    double mach_hi = 1.0;
-    for (int i = 0; i < 80; ++i) {
-        const double mach = 0.5 * (mach_lo + mach_hi);
-        const double T = T01 /
-            (1.0 + 0.5 * (gamma - 1.0) * mach * mach);
-        const double p = p01 * std::pow(T / T01, gamma / (gamma - 1.0));
-        const auto state = evaluate(air, T, p);
-        const double flow = state.rho * area1 * mach *
-            std::sqrt(gamma * air.parameters().R * T);
-        if (flow < point.mass_flow)
-            mach_lo = mach;
+    double velocity_lo = 0.0;
+    double velocity_hi = maximum_velocity;
+    for (int i = 0; i < 100; ++i) {
+        const double velocity = 0.5 * (velocity_lo + velocity_hi);
+        if (mass_residual(velocity) < 0.0)
+            velocity_lo = velocity;
         else
-            mach_hi = mach;
+            velocity_hi = velocity;
     }
-
-    const double mach = 0.5 * (mach_lo + mach_hi);
-    const double T1 = T01 /
-        (1.0 + 0.5 * (gamma - 1.0) * mach * mach);
-    const double p1 = p01 * std::pow(T1 / T01, gamma / (gamma - 1.0));
+    const double vm1 = 0.5 * (velocity_lo + velocity_hi);
+    const auto inlet_static = state_from_hs(
+        air, inlet_total.h - 0.5 * vm1 * vm1,
+        inlet_total.s, T01, p01);
     const double slip = 1.0 -
         std::sqrt(std::cos(beta_author_deg * std::numbers::pi / 180.0)) /
         std::pow(blades, 0.7);
 
     return {
-        {T1, p1, point.mass_flow, point.rpm, slip, 0.0, 0.0},
-        {T1 * 1.15, std::log(1.5 * p1 / scales().pressure)}
+        {inlet_static.T, inlet_static.p, point.mass_flow,
+         point.rpm, slip, 0.0, 0.0},
+        {inlet_static.T * 1.15,
+         std::log(1.5 * inlet_static.p / scales().pressure)}
     };
 }
 
@@ -168,6 +177,12 @@ struct DiffuserTraverseState {
     double flow_angle_from_meridional_deg;
     double radial_velocity_m_s;
     double tangential_velocity_m_s;
+};
+
+enum class PublishedLossSet {
+    CurrentScreen,
+    EckardtA2042,
+    CrossGeometry2137
 };
 
 struct Prediction {
@@ -221,6 +236,15 @@ struct Prediction {
     double impeller_throat_mach;
     DiffuserTraverseState near_traverse;
     DiffuserTraverseState far_traverse;
+    double impeller_choke_loss_j_kg;
+    double impeller_entrance_diffusion_loss_j_kg;
+    double impeller_recirculation_loss_j_kg;
+    double stage_total_enthalpy_rise_j_kg;
+    double impeller_euler_work_j_kg;
+    double external_loss_enthalpy_addition_j_kg;
+    double stage_energy_residual_vs_euler_j_kg;
+    double stage_energy_residual_vs_euler_disk_recirc_j_kg;
+    double stage_energy_residual_vs_euler_external_addition_j_kg;
 };
 
 ThroatGeometry eckardt_meanline_throat(const ImpellerSystemGeometry& g)
@@ -266,7 +290,8 @@ using ThroatCapacityCache =
     std::map<std::tuple<double, double, double>, ThroatCapacityEstimate>;
 
 ThroatCapacityEstimate estimate_throat_capacity(
-    const thermomodel::IdealGas& air,
+    const thermomodel::Model& air,
+    const thermomodel::DifferentiableModel& derivatives,
     const ImpellerSystemGeometry& g,
     const OperatingPointRequest& request,
     ThroatCapacityCache& cache)
@@ -282,7 +307,7 @@ ThroatCapacityEstimate estimate_throat_capacity(
     const auto throat_geometry = eckardt_meanline_throat(g);
     const auto throat_area = evaluate_throat_geometry(throat_geometry);
     const auto choke = evaluate_geometry_coupled_choking(
-        air, air, g,
+        air, derivatives, g,
         {operating.inlet_temperature,
          operating.inlet_pressure,
          operating.rotational_speed_rpm,
@@ -304,7 +329,8 @@ ThroatCapacityEstimate estimate_throat_capacity(
 // existing choke solver supplies the sonic upper bracket; the operating
 // solution is the subsonic root below it.
 OperatingThroatEstimate estimate_operating_throat(
-    const thermomodel::IdealGas& air,
+    const thermomodel::Model& air,
+    const thermomodel::DifferentiableModel& derivatives,
     const ImpellerSystemGeometry& g,
     const OperatingPointRequest& request)
 {
@@ -325,20 +351,12 @@ OperatingThroatEstimate estimate_operating_throat(
     const auto effective = state_from_hs(
         air, effective_h0, inlet.s, inlet.T, inlet.p);
     const auto sonic = evaluate_choking_mass_flux(
-        air, air, effective.T, effective.p);
+        air, derivatives, effective.T, effective.p);
 
     const auto state_at_speed = [&](double speed) {
-        const auto& parameters = air.parameters();
-        const double temperature = effective.T -
-            0.5 * speed * speed / parameters.cp;
-        if (!(temperature > 0.0 && temperature <= effective.T))
-            throw std::runtime_error("Invalid operating throat temperature");
-        const double pressure = effective.p * std::pow(
-            temperature / effective.T, parameters.cp / parameters.R);
-        const auto state = air.evaluate_Tp(temperature, pressure);
-        if (!state)
-            throw std::runtime_error("Operating throat state evaluation failed");
-        return state.value;
+        return state_from_hs(
+            air, effective_h0 - 0.5 * speed * speed,
+            inlet.s, effective.T, effective.p);
     };
     const auto mass_residual = [&](double speed) {
         return area.effective_area * state_at_speed(speed).rho * speed -
@@ -366,10 +384,9 @@ OperatingThroatEstimate estimate_operating_throat(
         0.5 * ut * ut - inlet_rothalpy;
     const double continuity_residual = area.effective_area * throat.rho * speed -
         op.mass_flow;
-    const double gamma = air.parameters().cp /
-        (air.parameters().cp - air.parameters().R);
     const double mach = speed /
-        std::sqrt(gamma * air.parameters().R * throat.T);
+        evaluate_isentropic_sound_speed(
+            derivatives, throat.T, throat.p).sound_speed;
     return {speed, throat.rho, throat.h, area.effective_area, ut,
             inlet_rothalpy, continuity_residual, rothalpy_residual,
             throat.s - inlet.s, mach};
@@ -433,6 +450,9 @@ struct ImpellerLossEstimate {
     double throat_rothalpy_residual_j_kg;
     double throat_entropy_residual_j_kg_k;
     double throat_mach;
+    double choke_j_kg;
+    double entrance_diffusion_j_kg;
+    double recirculation_j_kg;
 };
 
 enum class LossClosure {
@@ -463,16 +483,21 @@ struct LossModelOptions {
     double clearance_multiplier = 1.0;
     double mixing_multiplier = 1.0;
     double disk_friction_multiplier = 1.0;
+    PublishedLossSet published_set = PublishedLossSet::CurrentScreen;
     bool use_shroud_inlet_speed_proxy = false;
-    // Equation-form alternatives for auditing empirical loss closures.
+    // Equation-form alternatives for auditing the empirical loss closures.
+    // Defaults retain the existing baseline; each alternative is isolated in
+    // the ablation table below.
     bool blade_loading_use_shroud_speed_consistently = false;
     double blade_loading_loading_coefficient = 0.75;
     bool incidence_use_mean_inlet_speed = false;
     bool clearance_use_exit_meridional_speed = false;
     bool disk_friction_use_diameter_clearance_ratio = false;
-    // Diagnostic: integrate local smooth-wall Cf(Re) along the passage.
+    // Diagnostic extension: integrate the local smooth-wall Cf(Re) relation
+    // along a one-dimensional passage instead of evaluating it at mean state.
     bool distributed_skin_friction = false;
-    // Diagnostic: vary endpoint passage geometry and use continuity for Vm.
+    // Broader passage diagnostic: interpolate endpoint rectangular Dh and
+    // area, then obtain local meridional speed from continuity.
     bool geometry_continuity_skin_friction = false;
     // The source dataset gives beta2b=-30 deg; loss correlations use its
     // 30-deg magnitude. Keep this separate from the solver's complementary
@@ -507,12 +532,12 @@ double distributed_skin_friction_loss(
     double exit_temperature_k)
 {
     // First-order passage screen: W, rho and T vary linearly from the
-    // mean inlet state to the exit state; Dh stays at the existing Galvas
-    // equivalent diameter. Integrate dh_sf = 2 Cf(Re) W^2 ds / Dh.
+    // mean inlet state to the exit state; Dh remains the existing Galvas
+    // equivalent diameter. Integrate the published differential form
+    // d(h_sf)=2 Cf(Re) W^2 ds/Dh using composite Simpson quadrature.
     constexpr int intervals = 64;
     const double dx = 1.0 / intervals;
     double weighted_integrand_sum = 0.0;
-
     for (int i = 0; i <= intervals; ++i) {
         const double x = static_cast<double>(i) / intervals;
         const double speed = inlet_relative_speed_m_s + x *
@@ -523,13 +548,12 @@ double distributed_skin_friction_loss(
             (exit_temperature_k - inlet_temperature_k);
         const double reynolds = density * speed * hydraulic_diameter_m /
             air_viscosity_sutherland(temperature);
-        const double integrand =
-            schlichting_fanning_factor(reynolds) * speed * speed;
+        const double integrand = schlichting_fanning_factor(reynolds) *
+            speed * speed;
         const double weight = (i == 0 || i == intervals)
             ? 1.0 : (i % 2 == 0 ? 2.0 : 4.0);
         weighted_integrand_sum += weight * integrand;
     }
-
     const double path_average = dx * weighted_integrand_sum / 3.0;
     return 2.0 * (path_length_m / hydraulic_diameter_m) * path_average;
 }
@@ -551,17 +575,18 @@ double geometry_continuity_skin_friction_loss(
     double inlet_swirl_velocity_m_s,
     double exit_swirl_velocity_m_s)
 {
-    // Screening path: interpolate area, rectangular-endpoint Dh, radius,
-    // thermodynamic state, and absolute swirl. Continuity supplies Vm(x);
-    // the velocity triangle supplies W(x). This is not energy-closed.
+    // Screening path: linearly interpolate the effective flow area,
+    // rectangular-endpoint Dh, radius, thermodynamic state, and absolute
+    // swirl. Continuity supplies Vm(x); the velocity triangle supplies W(x).
+    // This is not an energy-closed throughflow solution.
     constexpr int intervals = 64;
     const double dx = 1.0 / intervals;
     double weighted_integrand_sum = 0.0;
-
     for (int i = 0; i <= intervals; ++i) {
         const double x = static_cast<double>(i) / intervals;
-        const double area = inlet_area_m2 + x * (exit_area_m2 - inlet_area_m2);
-        const double dh = inlet_hydraulic_diameter_m + x *
+        const double area = inlet_area_m2 + x *
+            (exit_area_m2 - inlet_area_m2);
+        const double hydraulic_diameter = inlet_hydraulic_diameter_m + x *
             (exit_hydraulic_diameter_m - inlet_hydraulic_diameter_m);
         const double density = inlet_density_kg_m3 + x *
             (exit_density_kg_m3 - inlet_density_kg_m3);
@@ -571,33 +596,31 @@ double geometry_continuity_skin_friction_loss(
             (exit_radius_m - inlet_radius_m);
         const double swirl = inlet_swirl_velocity_m_s + x *
             (exit_swirl_velocity_m_s - inlet_swirl_velocity_m_s);
-
         const double meridional_speed = mass_flow_kg_s / (density * area);
         const double blade_speed = angular_speed_rad_s * radius;
         const double relative_speed = std::hypot(
             meridional_speed, swirl - blade_speed);
-        const double reynolds = density * relative_speed * dh /
+        const double reynolds = density * relative_speed * hydraulic_diameter /
             air_viscosity_sutherland(temperature);
-        const double integrand =
-            schlichting_fanning_factor(reynolds) *
-            relative_speed * relative_speed / dh;
-
+        const double integrand = schlichting_fanning_factor(reynolds) *
+            relative_speed * relative_speed / hydraulic_diameter;
         const double weight = (i == 0 || i == intervals)
             ? 1.0 : (i % 2 == 0 ? 2.0 : 4.0);
         weighted_integrand_sum += weight * integrand;
     }
-
     const double path_average = dx * weighted_integrand_sum / 3.0;
     return 2.0 * path_length_m * path_average;
 }
 
 ImpellerLossEstimate estimate_impeller_losses(
     const MapPoint& point,
-    const thermomodel::IdealGas& air,
+    const thermomodel::Model& air,
+    const thermomodel::DifferentiableModel& derivatives,
     const ImpellerSystemGeometry& g,
     const OperatingPointRequest& request,
     const OperatingPointResult& trial,
     const OperatingThroatEstimate& throat,
+    double throat_capacity_utilization,
     const LossModelOptions& options)
 {
     constexpr double blades = 20.0;
@@ -638,33 +661,59 @@ ImpellerLossEstimate estimate_impeller_losses(
     const double inlet_area_ratio = inlet_area / throat_area.effective_area;
     // Incidence correlation uses the source's meridional angle convention;
     // the throat-area geometry above stores the complementary tangential angle.
-    constexpr double beta1_mean_meridional_deg = 0.5 * (63.0 + 40.0);
+    const double beta1_mean_meridional_deg =
+        options.published_set == PublishedLossSet::CurrentScreen
+            ? 0.5 * (63.0 + 40.0) : 56.0;
     const double beta1_blade = beta1_mean_meridional_deg * pi / 180.0;
-    const double beta1_opt = std::atan(
+    double beta1_opt = std::atan(
         inlet_area_ratio * std::tan(beta1_blade));
+    if (options.published_set != PublishedLossSet::CurrentScreen) {
+        // Conrad's inlet-metal-angle correction, using the documented mean
+        // inlet blade thickness and the source's meridional angle convention.
+        constexpr double inlet_blade_thickness_m = 0.00211;
+        const double D1 = 2.0 * r1m;
+        const double open_pitch_circumference =
+            pi * D1 - blades * inlet_blade_thickness_m;
+        if (!(open_pitch_circumference > 0.0))
+            throw std::runtime_error("Invalid Conrad inlet pitch");
+        beta1_opt = std::atan(
+            (pi * D1 / open_pitch_circumference) * std::tan(beta1_blade));
+    }
     // Meroni's inlet metal angles are referenced to the meridional axis.
     // Convert the relative-velocity triangle to that same convention.
     const double U1m = omega * r1m;
     const double W1m = std::hypot(
         Vm1, request.operating.inlet_prewhirl - U1m);
+    const double Wu1m = request.operating.inlet_prewhirl - U1m;
     const double beta1_flow = std::atan2(
         U1m - request.operating.inlet_prewhirl, Vm1);
     const double incidence_angle = beta1_flow - beta1_opt;
-    const double incidence_speed = options.incidence_use_mean_inlet_speed
-        ? W1m : W1s;
-    const double incidence_loss = 0.5 * incidence_speed * incidence_speed *
+    const double incidence_speed =
+        options.published_set != PublishedLossSet::CurrentScreen
+            ? W1
+            : options.incidence_use_mean_inlet_speed ? W1m : W1s;
+    const double incidence_sigma =
+        options.published_set == PublishedLossSet::CurrentScreen ? 1.0 : 0.6;
+    const double incidence_loss = incidence_sigma * 0.5 *
+        incidence_speed * incidence_speed *
         std::pow(std::sin(incidence_angle), 2.0);
     const double Ctheta2 = request.operating.slip_factor *
         (U2 - Vm2 / std::tan(beta2));
     const double W2 = std::hypot(Vm2, Ctheta2 - U2);
-    // Jansen's published mean relative velocity is the baseline.
-    // Preserve the prior RMS/shroud proxy only as a diagnostic alternative.
+    // Jansen's mean relative velocity used by the published skin-friction
+    // correlation. Preserve the prior RMS/shroud proxy only as a diagnostic
+    // alternative; the baseline follows the source definition.
     const double Wbar_jansen = (2.0 * W2 + W1h + W1s) / 4.0;
     const double Wbar_from_mean_inlet =
         std::sqrt(0.5 * (W1 * W1 + W2 * W2));
     const double Wbar_from_shroud =
         std::sqrt(0.5 * (W1s * W1s + W2 * W2));
-    const double Wbar = options.use_shroud_inlet_speed_proxy
+    const double Wbar_aungier = std::sqrt(0.5 * (W1 * W1 + W2 * W2));
+    const double Wbar = options.published_set == PublishedLossSet::EckardtA2042
+        ? (2.0 * W2 + W1s - W1h) / 4.0
+        : options.published_set == PublishedLossSet::CrossGeometry2137
+        ? Wbar_aungier
+        : options.use_shroud_inlet_speed_proxy
         ? std::max(Wbar_from_mean_inlet, Wbar_from_shroud)
         : Wbar_jansen;
 
@@ -745,8 +794,16 @@ ImpellerLossEstimate estimate_impeller_losses(
         options.blade_loading_loading_coefficient *
             (work / (U2 * U2)) * (W2 / W1_blade_loading) /
             diffusion_geometry;
+    const double delta_w_aungier =
+        2.0 * pi * g.impeller.exit_diameter * Ctheta2 /
+        (blades * blade_length);
+    const double diffusion_factor_published = 1.0 - W2 / W1s +
+        0.75 * (work / (U2 * U2)) * (W2 / W1s) /
+            diffusion_geometry;
     const double blade_loading_loss =
-        0.05 * diffusion_factor * diffusion_factor * U2 * U2;
+        options.published_set == PublishedLossSet::CurrentScreen
+            ? 0.05 * diffusion_factor * diffusion_factor * U2 * U2
+            : delta_w_aungier * delta_w_aungier / 48.0;
 
     // Jansen tip-clearance leakage, with Eckardt A clearances from Meroni
     // Table 5: axial 0.235 mm and radial 0.190 mm.
@@ -754,12 +811,23 @@ ImpellerLossEstimate estimate_impeller_losses(
     const double C1m = options.clearance_use_exit_meridional_speed
         ? Vm2 : Vm1;
     const double C2t = Ctheta2;
-    const double clearance_loss = 0.6 * mean_clearance_m / b2 *
+    const double jansen_clearance_loss = 0.6 * mean_clearance_m / b2 *
         std::abs(C2t) * std::sqrt(
             4.0 * pi / (b2 * blades) *
             ((r1s * r1s - r1h * r1h) /
              ((r2 - r1s) * (1.0 + outlet_state.rho / inlet_state.rho))) *
             std::abs(C2t) * C1m);
+    const double clearance_loss =
+        options.published_set == PublishedLossSet::EckardtA2042
+            ? 0.1 * (0.0005 / b2) * U2 * U2
+            : options.published_set == PublishedLossSet::CrossGeometry2137
+            ? 0.6 * (0.0005 / b2) * std::abs(C2t) * std::sqrt(
+                2.0 * pi * (std::pow(2.0 * r1s, 2.0) -
+                            std::pow(2.0 * r1h, 2.0)) /
+                (b2 * blades * (2.0 * r2 - 2.0 * r1s) *
+                 (1.0 + outlet_state.rho / inlet_state.rho)) *
+                std::abs(C2t) * Vm1)
+            : jansen_clearance_loss;
 
     // Johnston-Dean jet/wake mixing. Meroni uses chi=0.15 and b*=1 for this
     // screening model. Here b* is diffuser-inlet depth / impeller-exit depth;
@@ -774,10 +842,27 @@ ImpellerLossEstimate estimate_impeller_losses(
     const double Ctheta = Ctheta2;
     const double C2 = std::hypot(Vm2, Ctheta);
     const double alpha2 = std::atan2(Vm2, Ctheta);
-    const double mixing_loss = 0.5 * C2 * C2 *
-        std::pow((1.0 - wake_fraction - diffuser_to_impeller_width_ratio) /
-                 (1.0 - wake_fraction), 2.0) * std::cos(alpha2) *
-        std::cos(alpha2);
+    const double aungier_delta_w =
+        2.0 * pi * g.impeller.exit_diameter * Ctheta2 /
+        (blades * blade_length);
+    // Aungier's mixing correlation uses mean-streamline W1xi to form Wmax,
+    // then the inlet relative tangential component Wu1xi in Wout (Kovar et
+    // al., 2021, Eqs. 43-45). Keep the shroud speed only for correlations
+    // that explicitly call for W1s.
+    const double w_max = 0.5 * (W1m + W2 + aungier_delta_w);
+    const double deq = w_max / W2;
+    const double w_separation = deq <= 2.0 ? W2 : W2 * deq / 2.0;
+    const double aungier_w_out = std::hypot(
+        Vm2 * exit_area / (pi * g.impeller.exit_diameter * b2), Wu1m);
+    const double aungier_mixing_loss =
+        0.5 * std::pow(w_separation - aungier_w_out, 2.0);
+    const double mixing_loss =
+        options.published_set == PublishedLossSet::CurrentScreen
+            ? 0.5 * C2 * C2 *
+                std::pow((1.0 - wake_fraction - diffuser_to_impeller_width_ratio) /
+                         (1.0 - wake_fraction), 2.0) * std::cos(alpha2) *
+                std::cos(alpha2)
+            : aungier_mixing_loss;
 
     // Daily-Nece disk friction, using Eckardt A backface clearance 0.235 mm.
     const double mu2 = air_viscosity_sutherland(outlet_state.T);
@@ -791,9 +876,46 @@ ImpellerLossEstimate estimate_impeller_losses(
               std::sqrt(Re2)
         : 0.102 * std::pow(epsilon_backface_ratio, 0.1) /
               std::pow(Re2, 0.2);
-    const double disk_loss = 0.25 *
-        (0.5 * (inlet_state.rho + outlet_state.rho)) *
-        U2 * U2 * U2 * r2 * r2 * Kf / point.mass_flow;
+    const double shepherd_reynolds = outlet_state.rho * U2 * (2.0 * r2) / mu2;
+    const double disk_loss =
+        options.published_set == PublishedLossSet::CurrentScreen
+            ? 0.25 * (0.5 * (inlet_state.rho + outlet_state.rho)) *
+                U2 * U2 * U2 * r2 * r2 * Kf / point.mass_flow
+            : 0.01356 * outlet_state.rho * U2 * U2 * U2 *
+                (2.0 * r2) * (2.0 * r2) /
+                (point.mass_flow * std::pow(shepherd_reynolds, 0.2));
+
+    double choke_loss = 0.0;
+    double entrance_diffusion_loss = 0.0;
+    double recirculation_loss = 0.0;
+    if (options.published_set != PublishedLossSet::CurrentScreen) {
+        // Aungier choke closure. The source's corrected throat-area ratio is
+        // unavailable in this mean-line reconstruction, so capacity
+        // utilization is used as a documented proxy for A_th*/(Cr A_th).
+        const double sonic_area_ratio_proxy = 1.0 /
+            std::max(1.0e-12, throat_capacity_utilization);
+        const double x_choke = std::max(
+            0.0, 10.0 * (1.1 - sonic_area_ratio_proxy));
+        choke_loss = 0.5 * W1 * W1 *
+            (0.05 * x_choke + std::pow(x_choke, 7.0));
+        // Aungier entrance diffusion/stall closure, using the coupled
+        // operating-throat relative speed as W_th.
+        const double base_entrance = std::max(
+            0.0, 0.4 * std::pow(W1 - throat.relative_speed_m_s, 2.0) -
+                     incidence_loss);
+        entrance_diffusion_loss = base_entrance;
+        if (throat.relative_speed_m_s > 0.0 &&
+            W1s / throat.relative_speed_m_s > 1.75) {
+            entrance_diffusion_loss = std::min(
+                base_entrance,
+                std::max(0.0, 0.5 * std::pow(
+                    W1s - 1.75 * throat.relative_speed_m_s, 2.0) -
+                    incidence_loss));
+        }
+        recirculation_loss = 0.02 *
+            std::sqrt(std::max(0.0, std::tan(alpha2))) *
+            diffusion_factor_published * diffusion_factor_published * U2 * U2;
+    }
 
     const double internal_loss =
         (options.skin_friction
@@ -803,11 +925,14 @@ ImpellerLossEstimate estimate_impeller_losses(
         (options.incidence
              ? options.incidence_multiplier * incidence_loss : 0.0) +
         (options.clearance
-             ? options.clearance_multiplier * clearance_loss : 0.0);
+             ? options.clearance_multiplier * clearance_loss : 0.0) +
+        choke_loss + entrance_diffusion_loss +
+        (options.published_set == PublishedLossSet::CurrentScreen
+             ? 0.0 : options.mixing_multiplier * mixing_loss);
     double entropy_generation = internal_loss / mean_temperature;
     if (options.closure == LossClosure::EnthalpyEquivalentEntropy) {
-        // Exact ideal-gas conversion of the loss enthalpy to entropy at the
-        // trial outlet total pressure, instead of the Δh/T_mean approximation.
+        // Convert the loss enthalpy to entropy at the trial outlet total
+        // pressure using the selected property model, instead of Δh/T_mean.
         const FlowStation inlet_station{
             inlet_state, {Vm1, request.operating.inlet_prewhirl}};
         const FlowStation outlet_station{
@@ -816,13 +941,16 @@ ImpellerLossEstimate estimate_impeller_losses(
                                   .stagnation_state;
         const auto total_out = evaluate_stagnation_state(air, outlet_station)
                                    .stagnation_state;
-        const double T_is = total_in.T * std::pow(
-            total_out.p / total_in.p,
-            air.parameters().R / air.parameters().cp);
-        if (!(T_is > 0.0 && internal_loss >= 0.0))
+        const auto isentropic_out = invert_temperature(
+            air, total_out.p, total_in.s,
+            Property::Entropy, total_in.T).state;
+        if (!(std::isfinite(isentropic_out.h) && internal_loss >= 0.0))
             throw std::runtime_error("Invalid enthalpy-equivalent loss state");
-        entropy_generation = air.parameters().cp * std::log1p(
-            internal_loss / (air.parameters().cp * T_is));
+        const auto loss_state = invert_temperature(
+            air, total_out.p, isentropic_out.h + internal_loss,
+            Property::Enthalpy, isentropic_out.T).state;
+        entropy_generation = internal_loss == 0.0
+            ? 0.0 : loss_state.s - total_in.s;
     }
     if (!(std::isfinite(blade_length) && blade_length > 0.0 &&
           std::isfinite(hydraulic_diameter) && hydraulic_diameter > 0.0 &&
@@ -832,6 +960,10 @@ ImpellerLossEstimate estimate_impeller_losses(
           std::isfinite(clearance_loss) && clearance_loss >= 0.0 &&
           std::isfinite(mixing_loss) && mixing_loss >= 0.0 &&
           std::isfinite(disk_loss) && disk_loss >= 0.0 &&
+          std::isfinite(choke_loss) && choke_loss >= 0.0 &&
+          std::isfinite(entrance_diffusion_loss) &&
+              entrance_diffusion_loss >= 0.0 &&
+          std::isfinite(recirculation_loss) && recirculation_loss >= 0.0 &&
           std::isfinite(entropy_generation) && entropy_generation >= 0.0))
         throw std::runtime_error("Invalid impeller loss estimate");
 
@@ -849,12 +981,14 @@ ImpellerLossEstimate estimate_impeller_losses(
             throat.effective_area_m2,
             throat.blade_speed_m_s, throat.inlet_rothalpy_j_kg,
             throat.mass_residual_kg_s, throat.rothalpy_residual_j_kg,
-            throat.entropy_residual_j_kg_k, throat.mach};
+            throat.entropy_residual_j_kg_k, throat.mach,
+            choke_loss, entrance_diffusion_loss, recirculation_loss};
 }
 
 Prediction predict(
     const MapPoint& point,
-    const thermomodel::IdealGas& air,
+    const thermomodel::Model& air,
+    const thermomodel::DifferentiableModel& derivatives,
     const ImpellerSystemGeometry& g,
     double darcy_factor,
     bool apply_galvas_incidence,
@@ -867,11 +1001,11 @@ Prediction predict(
     loss_options.skin_friction = include_skin_friction;
     loss_options.blade_loading = include_blade_loading;
     loss_options.incidence = apply_galvas_incidence;
-    auto request = make_request(point, air, g);
+    auto request = make_request(point, air, derivatives, g);
     const auto throat_capacity = estimate_throat_capacity(
-        air, g, request, throat_capacity_cache);
+        air, derivatives, g, request, throat_capacity_cache);
     const auto operating_throat = estimate_operating_throat(
-        air, g, request);
+        air, derivatives, g, request);
     NonlinearSolverOptions solver_options;
     solver_options.residual_tolerance = 1.0e-12;
 
@@ -885,7 +1019,10 @@ Prediction predict(
     ImpellerLossEstimate impeller_losses{};
     for (int iteration = 0; iteration < 20; ++iteration) {
         impeller_losses = estimate_impeller_losses(
-            point, air, g, request, impeller, operating_throat, loss_options);
+            point, air, derivatives, g, request, impeller,
+            operating_throat,
+            point.mass_flow / throat_capacity.critical_mass_flow_kg_s,
+            loss_options);
         request.operating.entropy_generation =
             impeller_losses.entropy_generation_j_kg_k;
         const auto corrected = evaluate_operating_point(
@@ -904,18 +1041,26 @@ Prediction predict(
     }
     // Keep diagnostics consistent with the final loss-corrected state.
     impeller_losses = estimate_impeller_losses(
-        point, air, g, request, impeller, operating_throat, loss_options);
+        point, air, derivatives, g, request, impeller, operating_throat,
+        point.mass_flow / throat_capacity.critical_mass_flow_kg_s,
+        loss_options);
 
     // Mixing and backface disk friction are external losses in the cited
     // mean-line formulation: apply their equivalent enthalpy rise at the
     // impeller exit pressure before solving the vaneless diffuser.
     const double external_loss =
-        (loss_options.mixing ? loss_options.mixing_multiplier *
+        (loss_options.published_set == PublishedLossSet::CurrentScreen &&
+         loss_options.mixing ? loss_options.mixing_multiplier *
              impeller_losses.mixing_j_kg : 0.0) +
         (loss_options.disk_friction ? loss_options.disk_friction_multiplier *
-             impeller_losses.disk_friction_j_kg : 0.0);
-    const double outlet_static_temperature = impeller.outlet_temperature +
-        external_loss / air.parameters().cp;
+             impeller_losses.disk_friction_j_kg : 0.0) +
+        impeller_losses.recirculation_j_kg;
+    const auto impeller_exit_static = evaluate(
+        air, impeller.outlet_temperature, impeller.outlet_pressure);
+    const double outlet_static_temperature = invert_temperature(
+        air, impeller.outlet_pressure,
+        impeller_exit_static.h + external_loss,
+        Property::Enthalpy, impeller.outlet_temperature).state.T;
 
     const double mass = request.operating.mass_flow;
     const double r2 = g.exit.diameter / 2.0;
@@ -944,7 +1089,7 @@ Prediction predict(
     const double hydraulic_diameter = 2.0 * width2;
     const double reynolds = state2.rho * inlet_speed *
         hydraulic_diameter / air_viscosity_sutherland(state2.T);
-    const double used_darcy_factor = (darcy_factor < 0.0
+    double used_darcy_factor = (darcy_factor < 0.0
         ? smooth_wall_darcy_factor(reynolds)
         : darcy_factor) * diffuser_friction_multiplier;
 
@@ -961,8 +1106,68 @@ Prediction predict(
     diffuser_options.darcy_friction_factor = used_darcy_factor;
     diffuser_options.radial_steps = 1024;
 
+    if (loss_options.published_set != PublishedLossSet::CurrentScreen &&
+        darcy_factor < 0.0) {
+        // Map the literature's vaneless-diffuser loss to an equivalent Darcy
+        // factor while retaining the existing variable-width integration.
+        // Coppage gives an explicit loss. Stanitz is evaluated on the current
+        // smooth-wall reference solution, then its entropy target is matched.
+        const FlowStation diffuser_inlet_station{state2, {vm2, whirl2}};
+        const auto total_in = evaluate_stagnation_state(
+            air, diffuser_inlet_station).stagnation_state;
+        const double C2 = std::hypot(vm2, whirl2);
+        const double alpha2 = std::atan2(vm2, whirl2);
+        double target_loss = 0.0;
+        if (loss_options.published_set == PublishedLossSet::EckardtA2042) {
+            const double cf_diffuser = schlichting_fanning_factor(reynolds);
+            target_loss = (2.0 / 3.0) * std::pow(r2 / r3, 1.5) *
+                (cf_diffuser * (2.0 * r2) / (8.0 * width2)) *
+                C2 * C2 / std::pow(std::cos(alpha2), 2.0);
+        } else {
+            const auto reference_diffuser =
+                evaluate_variable_width_vaneless_diffuser(
+                    air, derivatives, diffuser_geometry, inlet, diffuser_options);
+            const FlowStation outlet_station{
+                reference_diffuser.outlet_static,
+                {reference_diffuser.outlet_radial_velocity,
+                 reference_diffuser.outlet_tangential_velocity}};
+            const auto total_out = evaluate_stagnation_state(
+                air, outlet_station).stagnation_state;
+            const double gamma = 1004.5 / (1004.5 -
+                8.31446261815324 / 0.0289652);
+            const double exponent = (gamma - 1.0) / gamma;
+            target_loss = 1004.5 * total_in.T *
+                (std::pow(reference_diffuser.outlet_static.p / total_out.p,
+                          exponent) -
+                 std::pow(reference_diffuser.outlet_static.p / total_in.p,
+                          exponent));
+            target_loss = std::max(0.0, target_loss);
+        }
+        const double target_entropy = target_loss /
+            std::max(1.0, total_in.T);
+        auto entropy_residual = [&](double factor) {
+            auto trial_options = diffuser_options;
+            trial_options.darcy_friction_factor = factor;
+            const auto trial_diffuser = evaluate_variable_width_vaneless_diffuser(
+                air, derivatives, diffuser_geometry, inlet, trial_options);
+            return trial_diffuser.integrated_entropy_production - target_entropy;
+        };
+        double lo = 0.0;
+        double hi = 0.2;
+        while (entropy_residual(hi) < 0.0 && hi < 10.0)
+            hi *= 2.0;
+        for (int i = 0; i < 32; ++i) {
+            const double mid = 0.5 * (lo + hi);
+            if (entropy_residual(mid) < 0.0)
+                lo = mid;
+            else
+                hi = mid;
+        }
+        used_darcy_factor = 0.5 * (lo + hi);
+        diffuser_options.darcy_friction_factor = used_darcy_factor;
+    }
     const auto diffuser = evaluate_variable_width_vaneless_diffuser(
-        air, air, diffuser_geometry, inlet, diffuser_options);
+        air, derivatives, diffuser_geometry, inlet, diffuser_options);
 
     // Japikse reports diffuser traverses at four radii, including r/r2=1.075
     // and 1.6875. Integrate the model to these planes for future comparison
@@ -981,7 +1186,7 @@ Prediction predict(
             [=](double) { return (b3 - width2) / (r3 - r2); }
         };
         const auto station = evaluate_variable_width_vaneless_diffuser(
-            air, air, station_geometry, inlet, diffuser_options);
+            air, derivatives, station_geometry, inlet, diffuser_options);
         const FlowStation flow_station{
             station.outlet_static,
             {station.outlet_radial_velocity,
@@ -1026,11 +1231,10 @@ Prediction predict(
         .stagnation_state.p;
     const auto total1 = evaluate_stagnation_state(air, station1).stagnation_state;
     const auto total3 = evaluate_stagnation_state(air, station3).stagnation_state;
-    const double gamma = air.parameters().cp /
-        (air.parameters().cp - air.parameters().R);
-    const double T03s = total1.T * std::pow(p03 / total1.p,
-        (gamma - 1.0) / gamma);
-    const double eta_tt = (T03s - total1.T) / (total3.T - total1.T);
+    const auto total3_isentropic = invert_temperature(
+        air, p03, total1.s, Property::Entropy, total1.T).state;
+    const double eta_tt = (total3_isentropic.h - total1.h) /
+        (total3.h - total1.h);
 
     const double capacity_utilization = point.mass_flow /
         throat_capacity.critical_mass_flow_kg_s;
@@ -1053,7 +1257,8 @@ Prediction predict(
             capacity_margin_percent <= 0.0,
             impeller.specific_work +
                 (loss_options.disk_friction
-                     ? impeller_losses.disk_friction_j_kg : 0.0),
+                     ? impeller_losses.disk_friction_j_kg : 0.0) +
+                impeller_losses.recirculation_j_kg,
             total3.T,
             impeller_losses.reynolds,
             impeller_losses.clearance_j_kg,
@@ -1083,7 +1288,19 @@ Prediction predict(
             impeller_losses.throat_entropy_residual_j_kg_k,
             impeller_losses.throat_mach,
             near_traverse,
-            far_traverse};
+            far_traverse,
+            impeller_losses.choke_j_kg,
+            impeller_losses.entrance_diffusion_j_kg,
+            impeller_losses.recirculation_j_kg,
+            total3.h - total1.h,
+            impeller.specific_work,
+            external_loss,
+            (total3.h - total1.h) - impeller.specific_work,
+            (total3.h - total1.h) - impeller.specific_work -
+                (loss_options.disk_friction
+                     ? impeller_losses.disk_friction_j_kg : 0.0) -
+                impeller_losses.recirculation_j_kg,
+            (total3.h - total1.h) - impeller.specific_work - external_loss};
 }
 
 } // namespace
@@ -1101,14 +1318,50 @@ int main(int argc, char** argv)
             ? std::optional<std::filesystem::path>{argv[3]} : std::nullopt;
         const std::optional<std::filesystem::path> efficiency_output = argc > 4
             ? std::optional<std::filesystem::path>{argv[4]} : std::nullopt;
+        const std::string property_model = argc > 5 ? argv[5] : "ideal-gas";
+        if (property_model != "ideal-gas" && property_model != "pr-air")
+            throw std::invalid_argument(
+                "Thermodynamic model must be ideal-gas or pr-air");
         const auto points = read_map(input);
         const auto g = geometry();
-        const thermomodel::IdealGas air;
+        const thermomodel::IdealGas ideal_air;
+        thermomodel::PRParameters pseudo_air_parameters;
+        pseudo_air_parameters.molar_mass = 0.0289652;
+        pseudo_air_parameters.Tc = 132.53;
+        pseudo_air_parameters.pc = 3.786e6;
+        pseudo_air_parameters.acentric = 0.035;
+        pseudo_air_parameters.Tref = 298.15;
+        pseudo_air_parameters.pref = 101325.0;
+        const auto air_caloric = std::make_shared<const thermomodel::ConstantCp>(
+            1004.5);
+        const thermomodel::PengRobinson pr_air(
+            air_caloric, pseudo_air_parameters);
+        const thermomodel::Model& air = property_model == "pr-air"
+            ? static_cast<const thermomodel::Model&>(pr_air)
+            : static_cast<const thermomodel::Model&>(ideal_air);
+        const thermomodel::DifferentiableModel& derivatives =
+            property_model == "pr-air"
+                ? static_cast<const thermomodel::DifferentiableModel&>(pr_air)
+                : static_cast<const thermomodel::DifferentiableModel&>(ideal_air);
         ThroatCapacityCache throat_capacity_cache;
         std::filesystem::create_directories(output.parent_path());
         std::ofstream csv(output);
         if (!csv)
             throw std::runtime_error("Cannot write: " + output.string());
+        std::ofstream model_record(output.parent_path() /
+            "thermodynamic_model.txt");
+        if (!model_record)
+            throw std::runtime_error("Cannot write thermodynamic model record");
+        model_record << "property_model=" << property_model << '\n'
+                     << "published_loss_sets=diagnostic scenarios in loss_term_ablation.csv\n";
+        if (property_model == "pr-air")
+            model_record << "eos=Peng-Robinson pseudo-pure dry air\n"
+                            "molar_mass_kg_mol=0.0289652\n"
+                            "critical_temperature_K=132.53\n"
+                            "critical_pressure_Pa=3786000\n"
+                            "acentric_factor=0.035\n"
+                            "ideal_cp_J_kg_K=1004.5\n";
+        std::cout << "Thermodynamic model: " << property_model << '\n';
         csv << std::setprecision(12)
             << "model,darcy_factor,inlet_reynolds,rpm,mass_flow_kg_s,"
                "measured_total_pressure_ratio,predicted_total_pressure_ratio,"
@@ -1143,7 +1396,7 @@ int main(int argc, char** argv)
             int complete = 0;
             for (const auto& point : points) {
                 const auto result = predict(
-                    point, air, g, f, true, throat_capacity_cache);
+                    point, air, derivatives, g, f, true, throat_capacity_cache);
                 const double error = 100.0 *
                     (result.stage_pr - point.measured_pressure_ratio) /
                     point.measured_pressure_ratio;
@@ -1187,7 +1440,7 @@ int main(int argc, char** argv)
         double smooth_mean_re = 0.0;
         for (const auto& point : points) {
             const auto result = predict(
-                point, air, g, -1.0, true, throat_capacity_cache);
+                point, air, derivatives, g, -1.0, true, throat_capacity_cache);
             const double error = 100.0 *
                 (result.stage_pr - point.measured_pressure_ratio) /
                 point.measured_pressure_ratio;
@@ -1222,7 +1475,7 @@ int main(int argc, char** argv)
         double no_incidence_max_abs = 0.0;
         for (const auto& point : points) {
             const auto result = predict(
-                point, air, g, -1.0, false, throat_capacity_cache);
+                point, air, derivatives, g, -1.0, false, throat_capacity_cache);
             const double error = 100.0 *
                 (result.stage_pr - point.measured_pressure_ratio) /
                 point.measured_pressure_ratio;
@@ -1278,12 +1531,13 @@ int main(int argc, char** argv)
                "predicted_tangential_velocity_m_s\n";
         for (const auto& point : points) {
             const auto result = predict(
-                point, air, g, -1.0, true, throat_capacity_cache);
+                point, air, derivatives, g, -1.0, true, throat_capacity_cache);
             const auto write_traverse = [&](
                 const char* station_id,
                 const DiffuserTraverseState& station) {
                 traverse_csv << "smooth_wall_inlet_Re_galvas_incidence,"
-                    << "eckardt_impeller_a_backswept," << point.rpm << ',' << point.mass_flow << ',' << station_id
+                    << "eckardt_impeller_a_backswept,"
+                    << point.rpm << ',' << point.mass_flow << ',' << station_id
                     << ',' << station.radius_ratio << ',' << station.radius_m
                     << ',' << station.width_m
                     << ',' << station.impeller_exit_static_pressure_pa
@@ -1304,7 +1558,7 @@ int main(int argc, char** argv)
             std::numeric_limits<double>::infinity();
         for (const auto& point : points) {
             const auto result = predict(
-                point, air, g, -1.0, true, throat_capacity_cache);
+                point, air, derivatives, g, -1.0, true, throat_capacity_cache);
             pressure_choke_flags += result.choke_screen_flag ? 1 : 0;
             minimum_pressure_capacity_margin = std::min(
                 minimum_pressure_capacity_margin,
@@ -1343,7 +1597,7 @@ int main(int argc, char** argv)
                 for (const auto& point : efficiency_points) {
                     const MapPoint request{point.rpm, point.mass_flow, 1.0};
                     const auto result = predict(
-                        request, air, g, f, true, throat_capacity_cache);
+                        request, air, derivatives, g, f, true, throat_capacity_cache);
                     const double error_pp = 100.0 *
                         (result.total_to_total_efficiency - point.measured_efficiency);
                     efficiency_csv << "fixed_galvas_incidence," << f << ',' << result.inlet_reynolds
@@ -1377,7 +1631,7 @@ int main(int argc, char** argv)
             for (const auto& point : efficiency_points) {
                 const MapPoint request{point.rpm, point.mass_flow, 1.0};
                 const auto result = predict(
-                    request, air, g, -1.0, true, throat_capacity_cache);
+                    request, air, derivatives, g, -1.0, true, throat_capacity_cache);
                 const double error_pp = 100.0 *
                     (result.total_to_total_efficiency - point.measured_efficiency);
                 efficiency_csv << "smooth_wall_inlet_Re_galvas_incidence," << result.darcy_factor
@@ -1412,7 +1666,7 @@ int main(int argc, char** argv)
             for (const auto& point : efficiency_points) {
                 const MapPoint request{point.rpm, point.mass_flow, 1.0};
                 const auto result = predict(
-                    request, air, g, -1.0, false, throat_capacity_cache);
+                    request, air, derivatives, g, -1.0, false, throat_capacity_cache);
                 const double error_pp = 100.0 *
                     (result.total_to_total_efficiency - point.measured_efficiency);
                 efficiency_csv << "smooth_wall_inlet_Re_no_incidence,"
@@ -1476,21 +1730,24 @@ int main(int argc, char** argv)
                    "impeller_throat_rothalpy_residual_j_kg,"
                    "impeller_throat_entropy_residual_j_kg_k,"
                    "impeller_throat_mach,predicted_near_total_pressure_pa,"
-                   "predicted_far_total_temperature_k\n";
+                   "predicted_far_total_temperature_k,impeller_choke_loss_j_kg,"
+                   "impeller_entrance_diffusion_loss_j_kg,"
+                   "impeller_recirculation_loss_j_kg,"
+                   "stage_total_enthalpy_rise_j_kg,impeller_euler_work_j_kg,"
+                   "external_loss_enthalpy_addition_j_kg,"
+                   "stage_energy_residual_vs_euler_j_kg,"
+                   "stage_energy_residual_vs_euler_disk_recirc_j_kg,"
+                   "stage_energy_residual_vs_euler_external_addition_j_kg\n";
             struct AblationScenario {
                 std::string name;
                 LossModelOptions losses;
                 double diffuser_darcy_factor;
-                double diffuser_friction_multiplier = 1.0;
             };
             LossModelOptions full_losses;
-            LossModelOptions uniform_loss_075 = full_losses;
-            uniform_loss_075.skin_friction_multiplier = 0.75;
-            uniform_loss_075.blade_loading_multiplier = 0.75;
-            uniform_loss_075.incidence_multiplier = 0.75;
-            uniform_loss_075.clearance_multiplier = 0.75;
-            uniform_loss_075.mixing_multiplier = 0.75;
-            uniform_loss_075.disk_friction_multiplier = 0.75;
+            LossModelOptions published_2042 = full_losses;
+            published_2042.published_set = PublishedLossSet::EckardtA2042;
+            LossModelOptions published_2137 = full_losses;
+            published_2137.published_set = PublishedLossSet::CrossGeometry2137;
             LossModelOptions shroud_proxy = full_losses;
             shroud_proxy.use_shroud_inlet_speed_proxy = true;
             LossModelOptions distributed_skin = full_losses;
@@ -1535,14 +1792,14 @@ int main(int argc, char** argv)
             clearance_exit_speed.clearance_use_exit_meridional_speed = true;
             LossModelOptions disk_diameter_gap = full_losses;
             disk_diameter_gap.disk_friction_use_diameter_clearance_ratio = true;
-            LossModelOptions combined_alternatives = blade_loading_06;
-            combined_alternatives.incidence_use_mean_inlet_speed = true;
-            combined_alternatives.clearance_use_exit_meridional_speed = true;
-            combined_alternatives.disk_friction_use_diameter_clearance_ratio = true;
+            LossModelOptions source_consistent_losses = blade_loading_06;
+            source_consistent_losses.incidence_use_mean_inlet_speed = true;
+            source_consistent_losses.clearance_use_exit_meridional_speed = true;
+            source_consistent_losses.disk_friction_use_diameter_clearance_ratio = true;
             std::vector<AblationScenario> ablations{
                 {"all_losses_enthalpy_equivalent", full_losses, -1.0},
-                {"uniform_loss_multipliers_0p75", uniform_loss_075,
-                 -1.0, 0.75},
+                {"published_eckardt_a_set_2042", published_2042, -1.0},
+                {"published_cross_geometry_set_2137", published_2137, -1.0},
                 {"distributed_skin_friction_screen", distributed_skin, -1.0},
                 {"geometry_continuity_skin_friction_screen",
                  geometry_continuity_skin, -1.0},
@@ -1563,7 +1820,7 @@ int main(int argc, char** argv)
                 {"audit_incidence_mean_speed", incidence_mean_speed, -1.0},
                 {"audit_clearance_exit_meridional_speed", clearance_exit_speed, -1.0},
                 {"audit_disk_diameter_gap_ratio", disk_diameter_gap, -1.0},
-                {"audit_combined_alternative_forms", combined_alternatives, -1.0},
+                {"audit_combined_alternative_forms", source_consistent_losses, -1.0},
             };
 
             // b* is diffuser-inlet depth / impeller-exit depth, not the
@@ -1577,20 +1834,6 @@ int main(int argc, char** argv)
                 std::ostringstream name;
                 name << "mixing_chi_" << std::fixed << std::setprecision(2)
                      << chi << "_bstar_1.00";
-                ablations.push_back({name.str(), losses, -1.0});
-            }
-            // Dense, explicitly diagnostic sweep for the three station-matched
-            // Choi-Kang points. The Python qualification runner keeps these
-            // rows separate from the one-at-a-time ablation summary and
-            // reports whether any single chi lies within digitization error
-            // at all three flows. This does not alter the production model.
-            for (int chi_index = 0; chi_index <= 20; ++chi_index) {
-                const double chi = 0.01 * chi_index;
-                auto losses = full_losses;
-                losses.mixing_chi = chi;
-                std::ostringstream name;
-                name << "flow_mix_sweep_chi_" << std::fixed
-                     << std::setprecision(2) << chi << "_bstar_1.00";
                 ablations.push_back({name.str(), losses, -1.0});
             }
             for (double bstar : {1.02, 1.10}) {
@@ -1618,12 +1861,25 @@ int main(int argc, char** argv)
                 double scenario_pr = 0.0;
                 for (const auto& point : efficiency_points) {
                     const MapPoint request{point.rpm, point.mass_flow, 1.0};
-                    const auto result = predict(
-                        request, air, g, scenario.diffuser_darcy_factor,
-                        scenario.losses.incidence, throat_capacity_cache,
-                        scenario.losses.skin_friction,
-                        scenario.losses.blade_loading, scenario.losses,
-                        scenario.diffuser_friction_multiplier);
+                    const auto result = [&] {
+                        try {
+                            return predict(
+                                request, air, derivatives, g,
+                                scenario.diffuser_darcy_factor,
+                                scenario.losses.incidence,
+                                throat_capacity_cache,
+                                scenario.losses.skin_friction,
+                                scenario.losses.blade_loading,
+                                scenario.losses);
+                        }
+                        catch (const std::exception& error) {
+                            throw std::runtime_error(
+                                "Ablation scenario '" + scenario.name +
+                                "' failed at " + std::to_string(point.rpm) +
+                                " rpm, " + std::to_string(point.mass_flow) +
+                                " kg/s: " + error.what());
+                        }
+                    }();
                     const double error_pp = 100.0 *
                         (result.total_to_total_efficiency -
                          point.measured_efficiency);
@@ -1668,7 +1924,17 @@ int main(int argc, char** argv)
                         << result.impeller_throat_entropy_residual_j_kg_k << ','
                         << result.impeller_throat_mach << ','
                         << result.near_traverse.total_pressure_pa << ','
-                        << result.far_traverse.total_temperature_k << '\n';
+                        << result.far_traverse.total_temperature_k << ','
+                        << result.impeller_choke_loss_j_kg << ','
+                        << result.impeller_entrance_diffusion_loss_j_kg << ','
+                        << result.impeller_recirculation_loss_j_kg << ','
+                        << result.stage_total_enthalpy_rise_j_kg << ','
+                        << result.impeller_euler_work_j_kg << ','
+                        << result.external_loss_enthalpy_addition_j_kg << ','
+                        << result.stage_energy_residual_vs_euler_j_kg << ','
+                        << result.stage_energy_residual_vs_euler_disk_recirc_j_kg << ','
+                        << result.stage_energy_residual_vs_euler_external_addition_j_kg
+                        << '\n';
                     scenario_bias += error_pp;
                     scenario_mae += std::abs(error_pp);
                     scenario_max_abs = std::max(

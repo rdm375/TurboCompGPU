@@ -4,7 +4,9 @@
 Pressure ratio and efficiency originate from separate datasets. This script
 interpolates the measured pressure map only within each measured speedline and
 marks efficiency points outside that range as unpaired. It then compares
-implied measured outlet temperature/work with each model's prediction.
+implied measured outlet temperature/work with each model's prediction. Select
+``--thermodynamic-model pr-air`` to use the benchmark's Peng-Robinson air EOS
+for that conversion rather than the ideal-gas diagnostic.
 """
 
 from __future__ import annotations
@@ -24,6 +26,110 @@ DEFAULT_MODEL = Path(
 DEFAULT_OUTPUT = Path(
     "benchmarks/results-eckardt-impeller-a/paired_energy_audit.csv"
 )
+
+
+class PengRobinsonAir:
+    """Match the pseudo-pure PR air model used by the Eckardt benchmark."""
+
+    def __init__(self, cp: float, molar_mass: float = 0.0289652,
+                 critical_temperature: float = 132.53,
+                 critical_pressure: float = 3.786e6,
+                 acentric_factor: float = 0.035,
+                 reference_temperature: float = 298.15,
+                 reference_pressure: float = 101325.0):
+        self.cp = cp
+        self.R = 8.31446261815324 / molar_mass
+        self.Tc = critical_temperature
+        self.pc = critical_pressure
+        self.omega = acentric_factor
+        self.Tref = reference_temperature
+        self.pref = reference_pressure
+        self.kappa = (0.37464 + 1.54226 * self.omega
+                      - 0.26992 * self.omega**2)
+        self.a0 = 0.45723552892138218938 * self.R**2 * self.Tc**2 / self.pc
+        self.b = 0.07779607390388845597 * self.R * self.Tc / self.pc
+
+    def state(self, temperature: float, pressure: float) -> tuple[float, float]:
+        """Return mass-specific PR enthalpy and entropy, matching ThermoGPU."""
+        if temperature <= 0.0 or pressure <= 0.0:
+            raise ValueError("PR state requires positive temperature and pressure")
+        root_tr = math.sqrt(temperature / self.Tc)
+        alpha_root = 1.0 + self.kappa * (1.0 - root_tr)
+        attraction = self.a0 * alpha_root**2
+        attraction_derivative = (
+            2.0 * self.a0 * alpha_root *
+            (-self.kappa / (2.0 * self.Tc * root_tr))
+        )
+
+        # The queried states are supercritical vapor states. Bracket the unique
+        # physical volume root instead of relying on a cubic-root convention.
+        lo = self.b * (1.0 + 1.0e-12)
+        hi = max(2.0 * self.R * temperature / pressure, 2.0 * self.b)
+
+        def pressure_at(volume: float) -> float:
+            return (self.R * temperature / (volume - self.b)
+                    - attraction / (volume * volume + 2.0 * self.b * volume
+                                    - self.b * self.b))
+
+        while pressure_at(hi) > pressure:
+            hi *= 2.0
+        for _ in range(100):
+            mid = 0.5 * (lo + hi)
+            if pressure_at(mid) > pressure:
+                lo = mid
+            else:
+                hi = mid
+        volume = 0.5 * (lo + hi)
+        compressibility = pressure * volume / (self.R * temperature)
+        sqrt2 = math.sqrt(2.0)
+        log_ratio = math.log(
+            (volume + (1.0 + sqrt2) * self.b) /
+            (volume + (1.0 - sqrt2) * self.b)
+        )
+        residual_u = (
+            (temperature * attraction_derivative - attraction) * log_ratio /
+            (2.0 * sqrt2 * self.b)
+        )
+        residual_s = (
+            self.R * math.log(compressibility * (volume - self.b) / volume)
+            + attraction_derivative * log_ratio / (2.0 * sqrt2 * self.b)
+        )
+        enthalpy = (
+            self.cp * (temperature - self.Tref) + residual_u
+            + pressure * volume - self.R * temperature
+        )
+        entropy = (
+            self.cp * math.log(temperature / self.Tref)
+            - self.R * math.log(pressure / self.pref) + residual_s
+        )
+        return enthalpy, entropy
+
+    def isentropic_enthalpy_rise(
+        self, inlet_temperature: float, inlet_pressure: float,
+        outlet_pressure: float,
+    ) -> float:
+        h1, s1 = self.state(inlet_temperature, inlet_pressure)
+        lo, hi = 100.0, 1200.0
+        for _ in range(100):
+            mid = 0.5 * (lo + hi)
+            if self.state(mid, outlet_pressure)[1] < s1:
+                lo = mid
+            else:
+                hi = mid
+        h_is, _ = self.state(0.5 * (lo + hi), outlet_pressure)
+        return h_is - h1
+
+    def temperature_at_enthalpy(
+        self, pressure: float, target_enthalpy: float,
+    ) -> float:
+        lo, hi = 100.0, 1200.0
+        for _ in range(100):
+            mid = 0.5 * (lo + hi)
+            if self.state(mid, pressure)[0] < target_enthalpy:
+                lo = mid
+            else:
+                hi = mid
+        return 0.5 * (lo + hi)
 
 
 def read_numeric_csv(path: Path, columns: dict[str, str]) -> list[dict[str, float]]:
@@ -92,6 +198,12 @@ def main() -> int:
     parser.add_argument("--model-results", type=Path, default=DEFAULT_MODEL)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--inlet-temperature-k", type=float, default=288.15)
+    parser.add_argument(
+        "--thermodynamic-model", choices=("ideal-gas", "pr-air"),
+        default="ideal-gas",
+        help=("property model for the work audit; select pr-air for the "
+              "Peng-Robinson benchmark runs"),
+    )
     parser.add_argument("--cp-j-kg-k", type=float, default=1004.5)
     parser.add_argument("--gas-constant-j-kg-k", type=float, default=287.05)
     args = parser.parse_args()
@@ -110,6 +222,7 @@ def main() -> int:
     gas_gamma = args.cp_j_kg_k / (args.cp_j_kg_k - args.gas_constant_j_kg_k)
     if gas_gamma <= 1.0:
         raise ValueError("cp must be greater than the gas constant")
+    pr_air = PengRobinsonAir(args.cp_j_kg_k)
 
     # Use digitized measured eta as the common operating-point key; model output
     # contains the same digitized samples and may include additional model variants.
@@ -150,14 +263,36 @@ def main() -> int:
         result_stats: dict[str, float | bool] = {"paired": paired}
         if paired:
             assert pr_measured is not None
-            t03s_measured = args.inlet_temperature_k * pr_measured ** ((gas_gamma - 1.0) / gas_gamma)
-            t03_measured = args.inlet_temperature_k + (t03s_measured - args.inlet_temperature_k) / eta_measured
-            t03s_predicted = args.inlet_temperature_k * pr_predicted ** ((gas_gamma - 1.0) / gas_gamma)
-            t03_predicted = args.inlet_temperature_k + (t03s_predicted - args.inlet_temperature_k) / eta_predicted
-            dh_is_measured = args.cp_j_kg_k * (t03s_measured - args.inlet_temperature_k)
-            dh_is_predicted = args.cp_j_kg_k * (t03s_predicted - args.inlet_temperature_k)
-            dh_measured = args.cp_j_kg_k * (t03_measured - args.inlet_temperature_k)
-            dh_predicted = args.cp_j_kg_k * (t03_predicted - args.inlet_temperature_k)
+            if args.thermodynamic_model == "pr-air":
+                # Match the benchmark's pseudo-pure dry-air PR parameters,
+                # ideal-gas cp, reference state, and 1 atm inlet pressure.
+                inlet_pressure = 101325.0
+                measured_pressure = inlet_pressure * pr_measured
+                predicted_pressure = inlet_pressure * pr_predicted
+                h1, _ = pr_air.state(args.inlet_temperature_k, inlet_pressure)
+                dh_is_measured = pr_air.isentropic_enthalpy_rise(
+                    args.inlet_temperature_k, inlet_pressure, measured_pressure
+                )
+                dh_is_predicted = pr_air.isentropic_enthalpy_rise(
+                    args.inlet_temperature_k, inlet_pressure, predicted_pressure
+                )
+                dh_measured = dh_is_measured / eta_measured
+                dh_predicted = dh_is_predicted / eta_predicted
+                t03_measured = pr_air.temperature_at_enthalpy(
+                    measured_pressure, h1 + dh_measured
+                )
+                t03_predicted = pr_air.temperature_at_enthalpy(
+                    predicted_pressure, h1 + dh_predicted
+                )
+            else:
+                t03s_measured = args.inlet_temperature_k * pr_measured ** ((gas_gamma - 1.0) / gas_gamma)
+                t03_measured = args.inlet_temperature_k + (t03s_measured - args.inlet_temperature_k) / eta_measured
+                t03s_predicted = args.inlet_temperature_k * pr_predicted ** ((gas_gamma - 1.0) / gas_gamma)
+                t03_predicted = args.inlet_temperature_k + (t03s_predicted - args.inlet_temperature_k) / eta_predicted
+                dh_is_measured = args.cp_j_kg_k * (t03s_measured - args.inlet_temperature_k)
+                dh_is_predicted = args.cp_j_kg_k * (t03s_predicted - args.inlet_temperature_k)
+                dh_measured = args.cp_j_kg_k * (t03_measured - args.inlet_temperature_k)
+                dh_predicted = args.cp_j_kg_k * (t03_predicted - args.inlet_temperature_k)
             pr_work_component = (dh_is_predicted - dh_is_measured) / eta_measured
             eta_work_component = dh_is_predicted * (1.0 / eta_predicted - 1.0 / eta_measured)
             row_out.update({
@@ -207,6 +342,7 @@ def main() -> int:
 
     base_points = len(efficiency_rows)
     print(f"Efficiency digitization points: {base_points}")
+    print(f"Energy audit thermodynamics: {args.thermodynamic_model}")
     for (model, factor), rows in sorted(aggregate.items()):
         paired = [r for r in rows if r["paired"]]
         if not paired:
