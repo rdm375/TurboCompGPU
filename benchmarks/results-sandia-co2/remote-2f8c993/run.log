@@ -1,0 +1,18 @@
+Peng-Robinson property samples: "/tmp/sandia-co2-properties.csv"
+CO2 Peng-Robinson spot checks against Span-Wagner reference (screen only; no acceptance gate):
+  305 K, 8 MPa: rho=575.799 kg/m3 (ref 656.77, error -12.3287%), cp=8815.92 J/(kg K) (ref 7312.5, error 20.5596%)
+  310 K, 8 MPa: rho=331.23 kg/m3 (ref 327.71, error 1.07426%), cp=8368.71 J/(kg K) (ref 9586.4, error -12.7023%)
+10000 rpm 0.454 kg/s: P3 error=0.990640%
+20000 rpm 0.771 kg/s: P3 error=1.786808%
+28000 rpm 1.134 kg/s: P3 error=1.051798%
+29888 rpm 1.315 kg/s: P3 error=4.143557%
+39000 rpm 1.451 kg/s: P3 error=4.727450%
+49000 rpm 1.816 kg/s: P3 error=4.755784%
+55000 rpm 2.043 kg/s: P3 error=4.915610%
+56000 rpm 2.088 kg/s: P3 error=1.408901%
+59584 rpm 2.609 kg/s: P3 error=7.916271%
+60000 rpm 2.225 kg/s: P3 error=8.896219%
+64384 rpm 2.86 kg/s: P3 error=8.724299%
+64900 rpm 2.406 kg/s: P3 error=9.684088%
+Sandia CO2 Peng-Robinson impeller-only screen: 12/12 valid, MAPE=4.91679%, max_abs=9.68409%
+CSV: "/tmp/sandia-co2-screen.csv"

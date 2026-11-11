@@ -1,0 +1,3 @@
+Pure R134a Peng-Robinson EOS with constant ideal-gas cp=850 J/(kg K).
+The test uses provisional reconstructed geometry and slip; it is a convergence
+smoke screen, not reference-quality properties or compressor qualification.

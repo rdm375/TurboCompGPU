@@ -1,0 +1,2 @@
+rpm,mass_flow_kg_s,inlet_total_T_K,inlet_total_p_Pa,inlet_static_T_K,inlet_static_p_Pa,slip_factor,measured_PRtt,predicted_PRtt,PR_error_percent,measured_eta_tt,predicted_eta_tt,eta_error_percentage_points
+180000,0.039,265,165000,262.278797953,149104.645169,0.819377127598,2.35,3.07324172167,30.7762434755,0.8,1,20

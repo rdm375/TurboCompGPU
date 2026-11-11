@@ -542,6 +542,12 @@ target_link_libraries(
     PRIVATE turbocompgpu
 )
 
+# Published natural-gas mixture property grid used by Lin et al. (2026).
+add_executable(turbocompgpu_natural_gas_property_grid
+    benchmarks/natural_gas_property_grid.cpp)
+target_link_libraries(turbocompgpu_natural_gas_property_grid
+    PRIVATE turbocompgpu)
+
 # M1.6b.1: Matched-methane ideal-gas limiting behavior.
 if(BUILD_TESTING)
     add_executable(

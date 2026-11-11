@@ -1,0 +1,3 @@
+Pure CO2 Peng-Robinson with NIST Shomate ideal-gas caloric model.
+This is not a Span-Wagner-class reference EOS. The executable's two reference
+spot checks show sizable density and Cp errors near the pseudo-critical region.

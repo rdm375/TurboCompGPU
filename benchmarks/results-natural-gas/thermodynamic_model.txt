@@ -1,0 +1,9 @@
+source_paper=Lin et al. (2026), Table 1 composition and Sections 2.2-2.3 input grid
+model=Peng-Robinson mixture, vapor root
+composition_basis=mole fraction
+binary_interactions=zero; source paper does not report kij
+ideal_caloric_model=constant component mass-specific cp screening values
+reference_temperature_K=298.15
+reference_pressure_Pa=101325
+enthalpy_reference=ideal-gas enthalpy delta zero at Tref; residual enthalpy retained
+scope=property-path screen only; not a GERG validation score or compressor aerodynamic validation

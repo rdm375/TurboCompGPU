@@ -1,0 +1,6 @@
+operating_condition,inlet_pressure_mpa,inlet_temperature_c,outlet_pressure_mpa,speed_rpm,inlet_volume_flow_1000_m3_h,actual_power_kw,converted_power_kw,power_error_percent_reported,actual_pressure_ratio,converted_pressure_ratio,pressure_ratio_error_percent_reported,source_table
+1,5.94,8.4,9.16,7523,281.9,4667,4712,0.96,1.542,1.547,0.32,"Chen et al. (2025), Tables 2-3"
+2,6.82,9.5,10.64,7410,316.6,5167,5048,2.3,1.560,1.553,0.45,"Chen et al. (2025), Tables 2-3"
+3,6.82,12.2,10.82,7645,337.4,5625,5714,1.6,1.586,1.595,0.57,"Chen et al. (2025), Tables 2-3"
+4,6.94,14.8,11.59,8007,348.5,6417,6489,1.1,1.670,1.676,0.36,"Chen et al. (2025), Tables 2-3"
+5,6.90,14.9,11.97,8238,346.8,6917,6778,2.0,1.735,1.739,0.23,"Chen et al. (2025), Tables 2-3"

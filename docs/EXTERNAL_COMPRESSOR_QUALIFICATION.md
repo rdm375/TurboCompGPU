@@ -278,9 +278,9 @@ compressor calculations, not only a reference-comparison script.
 |---|---|---|---|
 | Eckardt B | 17 tabulated points | Yes: baseline screen plus 16 krpm held-out line gate | Same Eckardt family; fitted effective parameter is rotor-specific calibration |
 | Choi–Kang / Eckardt A | 3 approximate digitized points | Yes: station-matched CTest screen | Approximate digitization; one speed only |
-| Schiffmann–Favrat | One secondary-source design summary plus empty Figure 10 template | Smoke test only; no qualification gate | Reconcile inlet condition; R134a property qualification, map digitization, and loss model |
+| Schiffmann–Favrat | One secondary-source design summary plus empty Figure 10 template | Fresh smoke run converged but predicted PR 3.0732 vs 2.35 (+30.78%) and eta=1.000 vs 0.800 (+20.0 pp) | Poor agreement; constant-cp PR properties, reconstructed geometry, and provisional slip make this a smoke test, not qualification |
 | RADIVER | Empty licensed-data schema | Local-map runner available; requires authorized input | Public meanline geometry and provisional slip/blockage; no committed test points |
-| Sandia sCO2 | 12 map points plus P3/P05/T05 references | PR P3 screen; optional HEOS P3 screen and grouped PR-versus-HEOS property audit | Estimated geometry/blockage/slip; vaned outlet not modeled; neither screen is a full-stage CO2 qualification |
+| Sandia sCO2 | 12 map points plus P3/P05/T05 references | Fresh PR/Shomate P3 run: 12/12 converge, 4.917% MAPE, 9.684% max; optional HEOS data remain historical and unavailable in this runtime | PR spot Cp errors reach 20.56%; estimated geometry/blockage/slip; vaned outlet not modeled; no full-stage CO2 qualification |
 
 ## Sources
 

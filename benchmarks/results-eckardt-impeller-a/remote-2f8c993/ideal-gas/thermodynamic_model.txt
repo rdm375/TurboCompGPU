@@ -1,0 +1,2 @@
+property_model=ideal-gas
+published_loss_sets=diagnostic scenarios in loss_term_ablation.csv

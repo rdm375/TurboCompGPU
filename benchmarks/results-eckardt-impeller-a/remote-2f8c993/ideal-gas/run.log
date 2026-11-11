@@ -1,0 +1,63 @@
+Thermodynamic model: ideal-gas
+Linear diffuser-width taper: b2_eff=0.0255531 m to b3=0.01326 m; r3/r2=2.69
+Darcy factor, complete, bias_pct, MAPE_pct, max_abs_pct, mean_diffuser_loss_pct
+0, 17, 1.02959, 1.34511, 5.49524, -3.96676e-12
+0.005, 17, 0.200508, 1.14246, 4.44391, 0.81607
+0.01, 17, -0.560545, 1.21824, 3.45938, 1.56538
+0.015, 17, -1.26432, 1.56237, 2.53345, 2.25845
+0.02, 17, -1.91923, 2.11444, 3.07951, 2.90354
+0.03, 17, -3.10807, 3.1132, 4.43613, 4.07486
+0.04, 17, -4.16725, 4.16725, 5.63147, 5.11877
+smooth-wall inlet-Re estimate: mean_Re=837777, Darcy_factor_mean=0.0120493, range=[0.0113851, 0.0126611], bias_pct=-0.83196, MAPE_pct=1.34195, max_abs_pct=3.17929
+smooth-wall without Galvas incidence: bias_pct=-0.60322, MAPE_pct=1.23879, max_abs_pct=3.88999
+Per-point CSV: "/tmp/turbocompgpu-remote-physics/ideal-gas/pressure.csv"
+Diffuser traverse predictions CSV: "/tmp/turbocompgpu-remote-physics/ideal-gas/impeller_a_diffuser_traverse_predictions.csv"
+Estimated meanline inlet-throat screen: 0/17 pressure points exceed capacity; minimum margin_pct=24.8799
+
+Efficiency digitization comparison (percentage points):
+Darcy factor, complete, bias_pp, MAE_pp, max_abs_pp
+0, 21, -0.706624, 2.47468, 10.367
+0.005, 21, -2.10404, 3.30958, 9.18036
+0.01, 21, -3.38959, 4.35714, 8.05608
+0.015, 21, -4.58097, 5.34425, 7.82162
+0.02, 21, -5.69199, 6.26039, 8.85912
+0.03, 21, -7.71497, 8.10156, 10.7746
+0.04, 21, -9.52441, 9.74311, 12.513
+smooth_wall_inlet_Re_galvas_incidence, 21, -3.87984, 4.764, 7.66146
+Efficiency comparison CSV: "/tmp/turbocompgpu-remote-physics/ideal-gas/efficiency.csv"
+smooth_wall_inlet_Re_no_incidence, 21, -3.60577, 4.58139, 8.05047
+
+One-at-a-time loss ablation and bounded sensitivity (efficiency points):
+scenario,complete,bias_pp,MAE_pp,max_abs_pp,mean_work_J_kg,mean_pressure_ratio
+all_losses_enthalpy_equivalent,21,-3.87984,4.764,7.66146,54689,1.76286
+published_eckardt_a_set_2042,21,7.15127,7.15127,19.6539,55332.2,1.78562
+published_cross_geometry_set_2137,21,1.71235,2.20269,14.3507,55161.2,1.72622
+distributed_skin_friction_screen,21,-3.89709,4.77992,7.65133,54687.3,1.76259
+geometry_continuity_skin_friction_screen,21,-3.39095,4.40067,8.25166,54728.4,1.76851
+shroud_inlet_speed_proxy,21,-4.75738,5.47094,7.98029,54613.4,1.75151
+legacy_mean_temperature_entropy,21,-4.3486,5.13234,7.63365,54641.8,1.75578
+rectangular_endpoint_hydraulic_diameter,21,-3.37656,4.38492,8.24945,54729.7,1.76876
+without_skin_friction,21,-1.73551,3.55284,10.1938,54863.4,1.78836
+without_blade_loading,21,-2.82484,3.8183,8.36306,54786.9,1.77889
+without_incidence,21,-3.60577,4.58139,8.05047,54708.1,1.76564
+without_clearance,21,-3.57354,4.52365,8.00016,54715.6,1.76683
+without_mixing,21,6.54115,6.54115,17.793,54689,1.77234
+without_disk_friction,21,-3.58546,4.51506,7.90229,54480.4,1.76315
+without_mixing_and_disk_friction,21,6.91166,6.91166,18.093,54480.4,1.77265
+without_impeller_losses,21,-0.0898283,2.59995,11.645,55005.5,1.81169
+without_diffuser_friction,21,-0.706624,2.47468,10.367,54689,1.80079
+audit_blade_loading_shroud_speed,21,-4.50448,5.2744,7.76249,54634.2,1.75456
+audit_blade_loading_06_shroud_speed,21,-4.39464,5.18574,7.64821,54643.9,1.75601
+audit_incidence_mean_speed,21,-3.78552,4.70002,7.79157,54695.6,1.76384
+audit_clearance_exit_meridional_speed,21,-3.91313,4.78976,7.6311,54686.8,1.76254
+audit_disk_diameter_gap_ratio,21,-3.82566,4.7182,7.70581,54650.5,1.76292
+audit_combined_alternative_forms,21,-4.28023,5.1024,7.5963,54609.9,1.75671
+mixing_chi_0.05_bstar_1.00,21,4.46489,4.46489,15.7821,54689,1.77058
+mixing_chi_0.10_bstar_1.00,21,0.890948,1.93328,12.3116,54689,1.7674
+mixing_chi_0.20_bstar_1.00,21,-9.75668,9.9382,13.0416,54689,1.75675
+mixing_chi_0.25_bstar_1.00,21,-16.609,16.609,19.9526,54689,1.74876
+mixing_chi_0.30_bstar_1.00,21,-24.2345,24.2345,27.6572,54689,1.73857
+mixing_chi_0.15_bstar_1.02,21,-4.91163,5.60862,8.16299,54689,1.76183
+mixing_chi_0.15_bstar_1.10,21,-9.29304,9.51791,12.5744,54689,1.75725
+correlation_exit_angle_60deg_screen,21,-5.03384,5.63536,8.2613,54595.3,1.74946
+Loss-term ablation CSV: "/tmp/turbocompgpu-remote-physics/ideal-gas/loss_term_ablation.csv"

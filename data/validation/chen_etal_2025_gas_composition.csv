@@ -1,0 +1,9 @@
+component,mole_percent,source_table,notes
+methane,91.42,"Chen et al. (2025), Table 4",
+ethane,4.93,"Chen et al. (2025), Table 4",
+propane,0.96,"Chen et al. (2025), Table 4",
+butane,0.41,"Chen et al. (2025), Table 4",Paper does not resolve normal and iso isomers
+C5+,0.24,"Chen et al. (2025), Table 4",Heavy-end lump; do not silently substitute a pure component
+nitrogen,1.63,"Chen et al. (2025), Table 4",
+carbon_dioxide,0.12,"Chen et al. (2025), Table 4",
+oxygen,0.29,"Chen et al. (2025), Table 4",

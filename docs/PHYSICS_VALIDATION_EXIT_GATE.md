@@ -6,14 +6,24 @@ Reviewed: 2026-11-11
 
 **Physics validation for natural-gas compressor predictions is not complete.**
 The current Eckardt work is useful aerodynamic evidence for air. It does not
-qualify the model for a natural-gas compressor, and the latest benchmark
-selects only `ideal-gas` or `pr-air`.
+qualify the model for a natural-gas compressor. The benchmark now also exposes
+the Lin et al. fixed-composition PR natural-gas screening mixture.
 
-The broader repository does have a passing pure-methane Peng–Robinson
-thermodynamic comparison (105 operating points). That qualifies the methane
-property and solver path covered by that benchmark; it does not qualify a
-multicomponent pipeline-gas mixture or validate the meanline loss model on a
-natural-gas compressor map.
+The broader repository also has a passing pure-methane Peng–Robinson
+thermodynamic comparison (105 operating points). The new mixture property-grid
+run is a separate code-path check and does not qualify the meanline loss model
+on a natural-gas compressor map.
+
+ThermoGPU now has a fixed-composition `thermomodel::PengRobinsonMixture` that
+implements the stage-facing `Model` and `DifferentiableModel` interfaces,
+including mixture density, enthalpy, entropy, sound speed, and analytic
+T,p-derivatives. A reproducible eight-species composition from Lin et al.
+(2026), Table 1, is wired into the TurboCompGPU property-grid benchmark and
+available as the `pr-natural-gas-lin2026` stage benchmark selector. This closes
+the prior software interface gap. The selected benchmark composition uses zero
+binary interaction parameters and constant component ideal-gas heat capacities
+because the paper does not publish those inputs; it remains a screening setup,
+not an independently reference-qualified natural-gas property package.
 
 Accelerator implementation can be evaluated against a frozen CPU reference
 once the scalar reference is reproducible. Such results would establish
@@ -30,6 +40,9 @@ natural-gas gate below remains a blocker.
 | Published Set 2042 scenario | A published correlation bundle can reproduce pressure-ratio trends reasonably at selected Eckardt A points | The implementation uses proxies and does not reproduce the source paper's full geometry or algorithm; efficiency remains discrepant |
 | Loss, mixing, energy-partition, and slope sweeps | The residual is sensitive to loss closure and flow; energy bookkeeping can be inspected | A closer fit to the development map is not independent validation or proof that a particular correlation is correct |
 | Real-gas Eckardt run | Peng–Robinson air gives a useful check of the EOS path at air conditions | This is not a natural-gas mixture test; `pr-air` is explicitly the air composition |
+| Lin et al. natural-gas PR property grid and NIST GERG-2008 comparison | The fixed-composition PR model evaluates the 20 published inlet T,p combinations and has a reproducible independent reference comparison | Maximum errors are 2.914% in Z, 3.004% in density, 19.512% in common-reference enthalpy, and 2.251% in cp/cv; all exceed Lin's reported maxima. Zero kij and constant component cp remain screening assumptions. Gate 1 fails. |
+| Natural-gas stage interface smoke | `pr-natural-gas-lin2026` compiled and completed synthetic 14,000 rpm stage points at 0.25–2.00 kg/s | Synthetic points and Eckardt geometry are only an interface smoke; applying the air-map flows to this gas caused existing physical checks to reject a point, as expected for an unmatched map |
+| Sandia CO2 and Schiffmann–Favrat cross-fluid screens | Additional EOS/component paths compile and converge | Sandia PR/Shomate spot properties differ from Span–Wagner by up to 20.6% in Cp; Schiffmann–Favrat returns eta=1.000 and +30.8% PR error; neither is a qualification pass |
 
 ## Fresh checks on 2026-11-11
 
@@ -72,6 +85,25 @@ The approximate 5.69 kg/s Eckardt A efficiency point is a separate high-flow
 stress point. It must not be allowed to dominate the ordinary-flow assessment
 or be silently discarded from the final report.
 
+The 2026-11-11 Sandia sCO2 rerun converged at 12/12 points with 4.917% P3
+MAPE and 9.684% maximum error, but uses PR plus a Shomate caloric model and
+provisional geometry/blockage/slip. Its 305 K, 8 MPa reference spot check has
+−12.33% density error and +20.56% Cp error. The 2026-11-11 Schiffmann–Favrat
+R134a smoke run reports PR 3.0732 against 2.35 (+30.78%) and efficiency 1.000
+against 0.800 (+20.0 pp). The efficiency is at the ideal limit, while the
+pressure and efficiency errors are large. Both executables exit successfully
+on convergence; the reported values make clear that convergence is not
+physical acceptance.
+Artifacts are under the `remote-2f8c993` subdirectories in
+`benchmarks/results-sandia-co2/` and `benchmarks/results-schiffmann-favrat/`.
+
+The official NASA HECC guide currently identifies its archive as public and
+provides the archive URL, and its related NASA presentation describes public
+geometry, performance, and detailed aerodynamic data. However, a fresh request
+to the archive URL from this validation environment returned HTTP 403
+AccessDenied, so the archive was not ingested or evaluated. HECC would provide
+an independent air-compressor benchmark, not a natural-gas validation set.
+
 ## Minimum natural-gas gate
 
 Before claiming the model is physically validated for a target natural-gas
@@ -84,17 +116,34 @@ compressor, freeze one test article and obtain:
 3. **Measurements:** multiple speeds and flows with mass or volume flow,
    inlet/outlet total pressure and temperature, shaft power or torque where
    available, and source uncertainty.
-4. **Blind comparison:** freeze equations, loss settings, and geometry mapping
+4. **Thermodynamic mixture path:** verify the implemented fixed-composition
+   PR model against GERG-2008 or another reference-quality backend over the
+   target compressor's pressure/temperature envelope. Replace screening cp
+   constants with documented caloric correlations and use published or
+   independently justified binary interaction parameters.
+5. **Blind comparison:** freeze equations, loss settings, and geometry mapping
    before scoring at least one held-out speed line or operating range.
-5. **Acceptance:** declare output-specific residual limits from combined
+6. **Acceptance:** declare output-specific residual limits from combined
    measurement, input, and digitization uncertainty before revealing the
    holdout. Report bias, MAE/RMSE, maximum error, trend with flow/speed, and
    solver failures; do not collapse the outputs into one score.
 
 Without machine geometry, field data can check a station-level or map
 conversion model, but it cannot validate this geometry-based aerodynamic
-solver. Without a specified gas composition, Peng–Robinson air is not a
+solver. The Lin mixture property run does not validate Chen et al.'s different gas
+composition or the compressor aerodynamics. Peng–Robinson air remains no
 substitute for natural gas.
+
+### Current three-gate status (2026-11-11)
+
+| Gate | Status | Evidence / closure condition |
+|---|---|---|
+| Mixture EOS versus GERG/REFPROP | **Fail** | NIST GERG-2008 screen exceeds Lin et al.'s reported maxima for all four compared metrics. See `benchmarks/results-natural-gas/lin2026_pr_vs_gerg2008_summary.md`. Determine whether documented binary interaction/caloric inputs resolve the mismatch, or replace the screening PR setup with a validated reference-quality mixture EOS. Do not tune to aggregate maxima alone. |
+| Compressor prediction versus matched natural-gas measurements | **Blocked** | Chen et al. publish field/map-conversion points but not the stage geometry and flow reference basis needed by this solver; Lin et al. withhold pointwise machine data and geometry. A matched machine dataset with composition, geometry, station definitions, flow basis, inlet/outlet states, power, and uncertainties is required. |
+| CPU versus accelerator numerical agreement | **Not run here** | This checkout has no CMake, CUDA compiler, NVIDIA device nodes, or accelerator runtime. Run a frozen CPU oracle and pointwise CUDA/accelerator comparisons on the project machines; compare statuses and outputs (and derivatives if optimization uses them) over interior and boundary cases. |
+
+The repository does not currently have a credible all-three-gates pass. These
+states are explicit failures/blockers, not waived gates.
 
 ## Practical accelerator entry gate
 
@@ -113,6 +162,19 @@ optimization, require:
 
 This allows backend parity and throughput experiments to be judged cleanly.
 It does not lift the natural-gas validation limitation above.
+
+## Natural-gas paper comparison
+
+The repo now archives two open-access natural-gas compressor papers and a
+source-labeled transcription of the five Chen et al. (2025) gas-storage points.
+The row-by-row published values, gas composition, and comparison against the
+current TurboCompGPU evidence are documented in
+[`NATURAL_GAS_PAPER_COMPARISON.md`](NATURAL_GAS_PAPER_COMPARISON.md). The Chen
+points are useful for a later map-level mixture regression, but they do not
+provide matched geometry or uncertainty for blind meanline validation. Lin et
+al. (2026) report aggregate PR/GERG and compressor errors, while explicitly
+withholding pointwise data and geometry. No direct TurboCompGPU-versus-paper
+natural-gas residual has been computed.
 
 ## Natural-gas dataset lead and limit
 

@@ -3,6 +3,7 @@
 #include <turbocompgpu/choking_mass_flux.hpp>
 #include <turbocompgpu/throat_geometry.hpp>
 #include <turbocompgpu/vaneless_diffuser_variable_width.hpp>
+#include "lin2026_natural_gas.hpp"
 
 #include <thermomodel/ideal_gas.hpp>
 #include <thermomodel/caloric.hpp>
@@ -1319,9 +1320,10 @@ int main(int argc, char** argv)
         const std::optional<std::filesystem::path> efficiency_output = argc > 4
             ? std::optional<std::filesystem::path>{argv[4]} : std::nullopt;
         const std::string property_model = argc > 5 ? argv[5] : "ideal-gas";
-        if (property_model != "ideal-gas" && property_model != "pr-air")
+        if (property_model != "ideal-gas" && property_model != "pr-air" &&
+            property_model != "pr-natural-gas-lin2026")
             throw std::invalid_argument(
-                "Thermodynamic model must be ideal-gas or pr-air");
+                "Thermodynamic model must be ideal-gas, pr-air, or pr-natural-gas-lin2026");
         const auto points = read_map(input);
         const auto g = geometry();
         const thermomodel::IdealGas ideal_air;
@@ -1336,12 +1338,17 @@ int main(int argc, char** argv)
             1004.5);
         const thermomodel::PengRobinson pr_air(
             air_caloric, pseudo_air_parameters);
+        const auto pr_natural_gas = benchmark_data::lin2026_natural_gas();
         const thermomodel::Model& air = property_model == "pr-air"
             ? static_cast<const thermomodel::Model&>(pr_air)
-            : static_cast<const thermomodel::Model&>(ideal_air);
+            : property_model == "pr-natural-gas-lin2026"
+                ? static_cast<const thermomodel::Model&>(pr_natural_gas)
+                : static_cast<const thermomodel::Model&>(ideal_air);
         const thermomodel::DifferentiableModel& derivatives =
             property_model == "pr-air"
                 ? static_cast<const thermomodel::DifferentiableModel&>(pr_air)
+                : property_model == "pr-natural-gas-lin2026"
+                    ? static_cast<const thermomodel::DifferentiableModel&>(pr_natural_gas)
                 : static_cast<const thermomodel::DifferentiableModel&>(ideal_air);
         ThroatCapacityCache throat_capacity_cache;
         std::filesystem::create_directories(output.parent_path());
@@ -1361,6 +1368,13 @@ int main(int argc, char** argv)
                             "critical_pressure_Pa=3786000\n"
                             "acentric_factor=0.035\n"
                             "ideal_cp_J_kg_K=1004.5\n";
+        if (property_model == "pr-natural-gas-lin2026")
+            model_record << "eos=Peng-Robinson fixed-composition mixture\n"
+                            "composition_source=Lin et al. (2026), Table 1\n"
+                            "binary_interactions=zero; not specified in paper\n"
+                            "ideal_caloric_model=constant component cp values; screening only\n"
+                            "mixture_molar_mass_kg_mol="
+                         << pr_natural_gas.mixture_molar_mass() << '\n';
         std::cout << "Thermodynamic model: " << property_model << '\n';
         csv << std::setprecision(12)
             << "model,darcy_factor,inlet_reynolds,rpm,mass_flow_kg_s,"
