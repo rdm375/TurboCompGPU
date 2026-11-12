@@ -1848,3 +1848,86 @@ if(TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR)
             COMMAND turbocompgpu_two_pipe_compressor_coupling_test)
     endif()
 endif()
+
+# CUDA API integration smoke: evaluates the fixed natural-gas PR mixture with
+# ThermoGPU's device kernel and Colebrook friction with FrictionLibrary's
+# host/device kernel, then checks both against their CPU implementations.
+option(TURBOCOMPGPU_ENABLE_CUDA "Build optional CUDA compressor backend tools" OFF)
+if(TURBOCOMPGPU_ENABLE_CUDA)
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    find_package(Threads REQUIRED)
+    find_package(friction CONFIG REQUIRED)
+    if(NOT TARGET thermogpu::thermo_cuda)
+        message(FATAL_ERROR
+            "ThermoGPU must be installed with THERMOGPU_ENABLE_CUDA=ON")
+    endif()
+
+    add_executable(turbocompgpu_gpu_backend_parity
+        examples/gpu_backend_parity.cu)
+    target_include_directories(turbocompgpu_gpu_backend_parity PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks)
+    target_link_libraries(turbocompgpu_gpu_backend_parity PRIVATE
+        turbocompgpu
+        thermogpu::thermo_cuda
+        friction::friction
+        CUDA::cudart)
+    set_target_properties(turbocompgpu_gpu_backend_parity PROPERTIES
+        CUDA_STANDARD 17
+        CUDA_STANDARD_REQUIRED YES
+        CUDA_EXTENSIONS NO)
+
+    # Batched implicit impeller solve. Each CUDA lane owns one operating
+    # point and evaluates the mixture PR EOS and Colebrook friction on-device.
+    add_library(turbocompgpu_cuda_backend STATIC
+        src/cuda/impeller_batch_cuda.cu)
+    target_link_libraries(turbocompgpu_cuda_backend PUBLIC
+        turbocompgpu
+        thermogpu::thermo_cuda
+        friction::friction
+        Threads::Threads
+        CUDA::cudart)
+    target_include_directories(turbocompgpu_cuda_backend PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+    set_target_properties(turbocompgpu_cuda_backend PROPERTIES
+        CUDA_STANDARD 17
+        CUDA_STANDARD_REQUIRED YES
+        CUDA_EXTENSIONS NO
+        POSITION_INDEPENDENT_CODE ON)
+
+    add_executable(turbocompgpu_gpu_impeller_batch
+        examples/gpu_impeller_batch_smoke.cu)
+    target_include_directories(turbocompgpu_gpu_impeller_batch PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks)
+    target_link_libraries(turbocompgpu_gpu_impeller_batch PRIVATE
+        turbocompgpu_cuda_backend)
+    set_target_properties(turbocompgpu_gpu_impeller_batch PROPERTIES
+        CUDA_STANDARD 17
+        CUDA_STANDARD_REQUIRED YES
+        CUDA_EXTENSIONS NO)
+
+    add_executable(turbocompgpu_gpu_impeller_cpu_parity
+        examples/gpu_impeller_cpu_parity.cpp)
+    target_include_directories(turbocompgpu_gpu_impeller_cpu_parity PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks)
+    target_link_libraries(turbocompgpu_gpu_impeller_cpu_parity PRIVATE
+        turbocompgpu_cuda_backend)
+
+    # Throughput benchmark includes host-device transfers and compares each
+    # batch against an independent CPU implementation of the same equations.
+    add_executable(turbocompgpu_gpu_impeller_batch_throughput
+        benchmarks/gpu_impeller_batch_throughput.cpp)
+    target_include_directories(turbocompgpu_gpu_impeller_batch_throughput PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks)
+    target_link_libraries(turbocompgpu_gpu_impeller_batch_throughput PRIVATE
+        turbocompgpu_cuda_backend)
+    target_link_libraries(turbocompgpu_gpu_impeller_batch_throughput PRIVATE
+        Threads::Threads)
+    find_package(OpenMP QUIET)
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(turbocompgpu_gpu_impeller_batch_throughput PRIVATE
+            OpenMP::OpenMP_CXX)
+        target_compile_definitions(turbocompgpu_gpu_impeller_batch_throughput PRIVATE
+            TURBOCOMPGPU_BENCHMARK_OPENMP=1)
+    endif()
+endif()

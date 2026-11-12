@@ -26,7 +26,15 @@ node and time) and `compressor_history.csv` (station pressures, flows, power,
 mass residual, and speed). The example reads `key = value` settings from
 `examples/two_pipe_compressor.conf`; it accepts a different file and output
 directory through command-line options. `scripts/plot_two_pipe_transient.py`
-turns the field CSV into pressure, flow, and temperature time-distance plots.
+turns the field CSV into pressure, flow, and temperature time-distance plots,
+and plots the upstream source/discharge pressure and through-flow/export-flow
+pipe boundary conditions against time. The distance plots mark the compressor
+inlet at the upstream segment end and compressor discharge at the downstream
+segment start.
+
+The sample has `pipe_length_m = 1200`, `cells = 12`, and `dt_s = 1`, giving
+`dx = pipe_length_m / cells = 100 m` in each leg and a 1 s timestep. Both legs
+use the same discretization in this example.
 
 ```sh
 ./build-coupled/turbocompgpu_two_pipe_compressor \
@@ -34,6 +42,7 @@ turns the field CSV into pressure, flow, and temperature time-distance plots.
   --output-dir benchmarks/two_pipe_demo
 python3 scripts/plot_two_pipe_transient.py \
   benchmarks/two_pipe_demo/pipeline_fields.csv \
+  --compressor-history benchmarks/two_pipe_demo/compressor_history.csv \
   --output-dir benchmarks/two_pipe_demo/plots
 ```
 

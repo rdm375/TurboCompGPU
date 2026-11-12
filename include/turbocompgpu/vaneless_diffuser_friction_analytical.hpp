@@ -2,6 +2,8 @@
 
 #include <turbocompgpu/vaneless_diffuser_friction_integrator.hpp>
 #include <thermomodel/derivatives.hpp>
+#include <friction/colebrook.hpp>
+#include <turbocompgpu/iso20765_5_viscosity.hpp>
 
 #include <cmath>
 #include <stdexcept>
@@ -180,6 +182,69 @@ evaluate_frictional_vaneless_diffuser_analytical(
 
     return integrate_frictional_vaneless_diffuser(
         model, geometry, inlet, options, provider);
+}
+
+// Local Colebrook closure for the analytical diffuser integration. The local
+// PR density and velocity are updated at each RK4 stage; viscosity is either
+// evaluated from ISO 20765-5 at the local state or supplied as a fixed fallback.
+// For a parallel-plate annulus, Dh = 2 b. This CPU reference mirrors the GPU
+// stage-local closure.
+inline FrictionalDiffuserResult
+evaluate_frictional_vaneless_diffuser_local_colebrook_analytical(
+    const thermomodel::Model& model,
+    const thermomodel::DifferentiableModel& derivatives_model,
+    const VanelessDiffuserGeometry& geometry,
+    const VanelessDiffuserInlet& inlet,
+    const transport::Iso20765Parameters& viscosity_model,
+    bool use_iso20765_viscosity,
+    double fixed_dynamic_viscosity_Pa_s,
+    double relative_roughness,
+    const FrictionalDiffuserOptions& options = {})
+{
+    if ((!use_iso20765_viscosity &&
+          !(std::isfinite(fixed_dynamic_viscosity_Pa_s) &&
+            fixed_dynamic_viscosity_Pa_s > 0.0)) ||
+          !std::isfinite(relative_roughness) || relative_roughness < 0.0 ||
+          relative_roughness >= 3.7) {
+        throw std::invalid_argument("Invalid local Colebrook inputs");
+    }
+
+    auto provider = [&](double radius,
+                        double width,
+                        double mass_flow,
+                        double,
+                        double relative_step,
+                        double singularity_tolerance,
+                        const frictional_diffuser_integrator_detail::Vector& y)
+    {
+        const auto state = evaluate(model, y[1], y[0]);
+        const double area = 2.0 * std::numbers::pi * radius * width;
+        const double u = mass_flow / (state.rho * area);
+        const double speed = std::hypot(u, y[2]);
+        const double dynamic_viscosity = use_iso20765_viscosity
+            ? transport::iso20765_5_dynamic_viscosity_Pa_s(
+                  viscosity_model, y[1], y[0], state.rho)
+            : fixed_dynamic_viscosity_Pa_s;
+        if (!(std::isfinite(dynamic_viscosity) && dynamic_viscosity > 0.0))
+            throw std::runtime_error("Local ISO 20765 viscosity evaluation failed");
+        const double reynolds = state.rho * speed * (2.0 * width) /
+            dynamic_viscosity;
+        const auto friction = friction::colebrook_turbulent(
+            reynolds, relative_roughness);
+        if (!(std::isfinite(friction.darcy_friction_factor) &&
+              friction.darcy_friction_factor > 0.0)) {
+            throw std::runtime_error("Local CPU Colebrook evaluation failed");
+        }
+        return frictional_diffuser_analytical_detail::evaluate_rhs(
+            model, derivatives_model, radius, width, mass_flow,
+            friction.darcy_friction_factor, relative_step,
+            singularity_tolerance, y, 0.0);
+    };
+
+    FrictionalDiffuserOptions integration_options = options;
+    integration_options.darcy_friction_factor = 0.0;
+    return integrate_frictional_vaneless_diffuser(
+        model, geometry, inlet, integration_options, provider);
 }
 
 } // namespace turbocompgpu

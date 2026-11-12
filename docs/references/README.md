@@ -145,3 +145,21 @@ experimental compressor measurements. The Zenodo record lists parquet files
 and train/test partitions but has no license value in its visible rights
 metadata. It is therefore cited, not redistributed. Use it only for
 cross-model/regression checks, not physical-accuracy claims.
+
+### Natural-gas transport-property standards
+
+International Organization for Standardization, **ISO 20765-5:2022**, *Natural
+gas — Calculation of thermodynamic properties — Part 5: Calculation of
+viscosity, Joule–Thomson coefficient, and isentropic exponent*. Section 5.1
+specifies an LBC-based viscosity method using composition, critical properties,
+and molar density. The standard identifies density sensitivity and describes
+obtaining density with ISO 20765-2 (GERG-2008). The implementation uses PR
+density as an explicit screening substitution and therefore does not claim
+ISO conformity.
+[ISO catalog record and public preview](https://www.iso.org/standard/79123.html).
+
+International Organization for Standardization, **ISO 20765-2:2015**, *Natural
+gas — Calculation of thermodynamic properties — Part 2: Single-phase properties
+(gas, liquid, and dense fluid) for extended ranges of application*. Annex B
+provides component critical properties used by the ISO 20765-5 mixing rules.
+[ISO catalog record](https://www.iso.org/standard/59222.html).

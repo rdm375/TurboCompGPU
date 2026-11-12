@@ -1,0 +1,10 @@
+# Model: LIN-2026 screening mixture; PR EOS; ISO 20765-5 local viscosity; inlet-Re impeller friction; stage-local Colebrook diffuser; 512-step constant-width diffuser
+# GPU buffers are retained at solver capacity; call time includes H2D/D2H copies and synchronization
+# CPU parallel path parallelizes independent operating points with OpenMP when available
+# CPU threads requested: 8; repeats: 5
+batch_size,cpu_serial_s,cpu_serial_points_s,cpu_parallel_s,cpu_parallel_points_s,gpu_end_to_end_s,gpu_points_s,gpu_vs_cpu_serial,gpu_vs_cpu_parallel,max_parity_tolerance_ratio,max_abs_pressure_error_Pa,max_abs_temperature_error_K
+64,0.929424,68.8599,0.26671,239.961,0.511818,125.044,1.81593,0.521103,2.87919e-07,4.65661e-10,0
+128,1.87838,68.144,0.545276,234.743,0.511165,250.408,3.6747,1.06673,2.87919e-07,4.65661e-10,0
+256,3.86442,66.2453,1.10564,231.54,0.511516,500.473,7.55485,2.1615,2.87919e-07,4.65661e-10,0
+512,7.83464,65.3508,2.02532,252.799,0.510236,1003.46,15.3549,3.96938,2.87919e-07,4.65661e-10,0
+1024,15.2305,67.2333,4.3479,235.516,0.509447,2010.02,29.8962,8.53453,2.87919e-07,4.65661e-10,0

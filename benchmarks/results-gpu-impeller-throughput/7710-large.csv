@@ -1,0 +1,10 @@
+# Model: LIN-2026 screening mixture; PR EOS; Colebrook; impeller plus 512-step constant-width frictional diffuser
+# GPU time includes per-call device allocation, H2D/D2H copies, and synchronization
+# CPU parallel path parallelizes independent operating points with OpenMP when available
+# CPU threads requested: 8; repeats: 5
+batch_size,cpu_serial_s,cpu_serial_points_s,cpu_parallel_s,cpu_parallel_points_s,gpu_end_to_end_s,gpu_points_s,gpu_vs_cpu_serial,gpu_vs_cpu_parallel,max_parity_tolerance_ratio,max_abs_pressure_error_Pa,max_abs_temperature_error_K
+64,0.640488,99.9238,0.172127,371.818,0.421262,151.925,1.5204,0.4086,4.10826e-07,2.32831e-10,5.68434e-14
+128,1.26807,100.941,0.375156,341.192,0.420686,304.265,3.0143,0.891771,4.10826e-07,2.32831e-10,5.68434e-14
+256,2.53795,100.869,0.650739,393.399,0.421003,608.071,6.02834,1.54569,4.10826e-07,2.32831e-10,5.68434e-14
+512,5.06391,101.108,1.27331,402.102,0.420005,1219.03,12.0568,3.03165,4.10826e-07,2.32831e-10,5.68434e-14
+1024,10.216,100.235,2.69361,380.158,0.4194,2441.58,24.3585,6.42255,4.10826e-07,2.32831e-10,5.68434e-14
