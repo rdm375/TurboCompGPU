@@ -1,0 +1,15 @@
+# Source: Dewar et al. (2019), Table 3, DOI 10.1155/2019/7415263.
+# Experimental static pressure taps; first 9 shroud side, last 3 hub side due to volute.
+tap,r_over_impeller_exit_radius,side
+1,1.01,shroud
+2,1.07,shroud
+3,1.13,shroud
+4,1.20,shroud
+5,1.30,shroud
+6,1.40,shroud
+7,1.50,shroud
+8,1.59,shroud
+9,1.69,shroud
+10,1.80,hub
+11,1.90,hub
+12,1.95,hub

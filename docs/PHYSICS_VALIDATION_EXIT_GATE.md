@@ -218,3 +218,23 @@ complete only after the blind, geometry-matched mixture dataset above passes
 its predeclared acceptance criteria. Until then, report the model as a
 numerically verified research reference with limited air-map screening and
 unqualified natural-gas predictive accuracy.
+
+## Additional non-NASA public-data survey (2026-11-11)
+
+The Dewar et al. (2019) open-access paper, tabulated 9-point map, and 12 tap
+radii are in the repository. The diffuser pressure measurements are plotted in
+Figure 8 and still need calibrated digitization. Rossbach et al. (2015) is
+archived under its CC BY-NC-ND 4.0 license; approximate experimental Figure 9
+pressure-recovery points are transcribed and their qualitative trends pass a
+small analysis script. The Purdue Methel thesis is catalogued but its download
+was blocked here, so no values are transcribed. DATED remains a 1D model-output
+dataset, not independent experimental evidence.
+
+These references broaden the available aerodynamic evidence, but do not yet
+close an external model-comparison gate. The current Eckardt map executable
+uses Eckardt A geometry and inlet assumptions, so scoring Dewar, Purdue, or
+RWTH points through it would be an invalid cross-machine comparison. The
+Rossbach figure read-off is only a source-data trend check. A case-driven
+geometry/station interface and source-specific measurement operators are
+required before model scores are valid. None of these air cases substitutes
+for a matched natural-gas stage dataset.

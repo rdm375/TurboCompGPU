@@ -89,3 +89,59 @@ its full text is not copied into this repository. Its test points are
 multistage/whole-machine thermodynamic checks, not matched single-stage loss
 map validation for TurboCompGPU. The paper excludes GERG and AGA from its EOS
 comparison, so it is complementary to, not a replacement for, our GERG screen.
+
+### Dewar et al. (2019)
+
+Brett Dewar, Jonna Tiainen, Ahti Jaatinen-Värri, Mike Creamer, Mariana
+Dotcheva, Jovana Radulovic, and James M. Buick, “CFD Modelling of a
+Centrifugal Compressor with Experimental Validation through Radial Diffuser
+Static Pressure Measurement,” *International Journal of Rotating Machinery*
+(2019), Article 7415263. [DOI: 10.1155/2019/7415263](https://doi.org/10.1155/2019/7415263).
+
+The open-access publisher version is archived as
+`dewar-etal-2019-diffuser-static-pressure.pdf` under the Creative Commons
+Attribution License stated in the article. SHA-256:
+`2730d400ed3a141a388d77aa34f0720284a1538dbbe214a065d43d89bb7d0f87`.
+Tables 1-4 provide the operating map and tap locations transcribed under
+`data/validation/dewar_etal_2019_*`. Figure 8 contains the experimental and
+CFD radial pressure profiles; the plotted measurements still require
+uncertainty-qualified digitization before pointwise scoring.
+
+### Methel (2016)
+
+Cam-Tu Jeanne Methel, “An experimental comparison of diffuser designs in a
+centrifugal compressor,” Purdue University MS thesis (2016).
+[Repository record and thesis](https://docs.lib.purdue.edu/open_access_theses/796/).
+The repository exposes the thesis for open access. No separate machine-readable
+measurement package was found in the record. The PDF is not mirrored here;
+check repository reuse terms before redistributing it.
+
+### Rossbach et al. (2015)
+
+Tim Rossbach, Christoph Rube, Matthias Wedeking, Holger Franz, and Peter
+Jeschke, “Performance Measurements of a Full-Stage Centrifugal Process Gas
+Compressor Test Rig,” Euroturbo ETC2015-084 (2015).
+[Paper record and source PDF](https://www.euroturbo.eu/publications/proceedings-papers/etc2015-084/).
+The test medium is air. Euroturbo's repository policy states CC BY-NC-ND 4.0
+for proceedings papers; the unchanged PDF is reproduced as
+`rossbach-etal-2015-process-compressor-test-rig.pdf` under that license.
+SHA-256:
+`16e54539cc1d1b1599efc5fe786d9337efa0cca37b57f255b9d537acad313a15`.
+The paper reports a design-speed map and component measurements in the
+vaneless diffuser and return channel. Experimental Figure 9 pressure-recovery
+points are approximately digitized in
+`../../data/validation/rossbach_etal_2015_diffusion_pressure_recovery_digitized.csv`.
+Run `python3 scripts/analyze_rossbach_figure9_trends.py` from the repository
+root for a qualitative trend check. The plot read-off is not original test
+data and does not yet score TurboCompGPU.
+
+### Picard, Schiffmann, and Ahmed (2023): DATED
+
+Cyril Picard, Jürg Schiffmann, and Faez Ahmed, “DATED: A Dataset of
+Centrifugal Compressors,” Zenodo v1.0.0 (2023).
+[DOI: 10.5281/zenodo.8200792](https://doi.org/10.5281/zenodo.8200792).
+This is a 22-million-case collection of **1D meanline model predictions**, not
+experimental compressor measurements. The Zenodo record lists parquet files
+and train/test partitions but has no license value in its visible rights
+metadata. It is therefore cited, not redistributed. Use it only for
+cross-model/regression checks, not physical-accuracy claims.

@@ -40,6 +40,18 @@ target_link_libraries(turbocompgpu
     INTERFACE thermogpu::thermo
 )
 
+if(BUILD_TESTING)
+    add_executable(
+        turbocompgpu_polytropic_efficiency_test
+        tests/polytropic_efficiency.cpp)
+    target_link_libraries(
+        turbocompgpu_polytropic_efficiency_test
+        PRIVATE turbocompgpu)
+    add_test(
+        NAME polytropic_efficiency
+        COMMAND turbocompgpu_polytropic_efficiency_test)
+endif()
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/EnzymeSensitivity.cmake")
 
 if(BUILD_TESTING)
@@ -1788,12 +1800,11 @@ if(BUILD_TESTING)
     )
 endif()
 
-# Optional end-to-end one-step coupling against the native C++ pipe solver.
-# Set this to a checkout of transient-pipe-flow to enable the integration
-# target; the compressor-only build remains independent of that repository.
+# Optional runnable example and end-to-end checks against the native C++ pipe
+# solver. Set this to a checkout of transient-pipe-flow to enable both targets.
 set(TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR "" CACHE PATH
     "Path to a transient-pipe-flow checkout for coupled integration tests")
-if(BUILD_TESTING AND TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR)
+if(TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR)
     if(NOT EXISTS "${TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR}/CMakeLists.txt")
         message(FATAL_ERROR
             "TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR must contain CMakeLists.txt")
@@ -1820,13 +1831,20 @@ if(BUILD_TESTING AND TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR)
         PUBLIC "${TURBOCOMPGPU_PIPE_SIM_SOURCE_DIR}/include")
     target_compile_features(turbocompgpu_pipe_sim_coupling PUBLIC cxx_std_20)
 
-    add_executable(
-        turbocompgpu_two_pipe_compressor_coupling_test
-        tests/two_pipe_compressor_coupling.cpp)
-    target_link_libraries(
-        turbocompgpu_two_pipe_compressor_coupling_test
+    add_executable(turbocompgpu_two_pipe_compressor
+        examples/two_pipe_compressor.cpp)
+    target_link_libraries(turbocompgpu_two_pipe_compressor
         PRIVATE turbocompgpu turbocompgpu_pipe_sim_coupling)
-    add_test(
-        NAME two_pipe_compressor_coupling
-        COMMAND turbocompgpu_two_pipe_compressor_coupling_test)
+
+    if(BUILD_TESTING)
+        add_executable(
+            turbocompgpu_two_pipe_compressor_coupling_test
+            tests/two_pipe_compressor_coupling.cpp)
+        target_link_libraries(
+            turbocompgpu_two_pipe_compressor_coupling_test
+            PRIVATE turbocompgpu turbocompgpu_pipe_sim_coupling)
+        add_test(
+            NAME two_pipe_compressor_coupling
+            COMMAND turbocompgpu_two_pipe_compressor_coupling_test)
+    endif()
 endif()

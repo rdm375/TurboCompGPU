@@ -1,6 +1,7 @@
 #include <turbocompgpu/complete_stage_solver.hpp>
 #include <turbocompgpu/geometry_coupled_choking.hpp>
 #include <turbocompgpu/choking_mass_flux.hpp>
+#include <turbocompgpu/polytropic_efficiency.hpp>
 #include <turbocompgpu/throat_geometry.hpp>
 #include <turbocompgpu/vaneless_diffuser_variable_width.hpp>
 #include "lin2026_natural_gas.hpp"
@@ -194,6 +195,9 @@ struct Prediction {
     double darcy_factor;
     double inlet_reynolds;
     double total_to_total_efficiency;
+    double polytropic_efficiency;
+    double polytropic_head_j_kg;
+    double polytropic_endpoint_temperature_residual_k;
     double impeller_skin_friction_loss_j_kg;
     double impeller_blade_loading_loss_j_kg;
     double impeller_skin_friction_factor;
@@ -1236,6 +1240,18 @@ Prediction predict(
         air, p03, total1.s, Property::Entropy, total1.T).state;
     const double eta_tt = (total3_isentropic.h - total1.h) /
         (total3.h - total1.h);
+    const auto polytropic = calculate_polytropic_efficiency(
+        total1.T, total1.p, total1.h,
+        total3.T, total3.p, total3.h,
+        [&](double temperature, double pressure) {
+            const auto state = evaluate(air, temperature, pressure);
+            const auto d = derivatives.derivatives_Tp(temperature, pressure);
+            if (!d)
+                throw std::runtime_error(
+                    "Polytropic EOS derivatives failed: " + d.message);
+            return PolytropicPathProperties{
+                state.rho, d.value.dh_dp_T, d.value.dh_dT_p};
+        });
 
     const double capacity_utilization = point.mass_flow /
         throat_capacity.critical_mass_flow_kg_s;
@@ -1244,7 +1260,10 @@ Prediction predict(
 
     return {p03 / p01, p02 / p01, p03 / p02,
             100.0 * (1.0 - p03 / p02), used_darcy_factor, reynolds,
-            eta_tt, impeller_losses.skin_friction_j_kg,
+            eta_tt, polytropic.polytropic_efficiency,
+            polytropic.polytropic_head_j_kg,
+            polytropic.endpoint_temperature_residual_k,
+            impeller_losses.skin_friction_j_kg,
             impeller_losses.blade_loading_j_kg,
             impeller_losses.friction_factor,
             impeller_losses.diffusion_factor,
@@ -1594,6 +1613,8 @@ int main(int argc, char** argv)
             efficiency_csv << std::setprecision(12)
                 << "model,darcy_factor,inlet_reynolds,rpm,mass_flow_kg_s,"
                    "measured_eta_tt,predicted_eta_tt,error_percentage_points,"
+                   "predicted_eta_p,polytropic_head_j_kg,"
+                   "polytropic_endpoint_temperature_residual_k,"
                    "predicted_total_pressure_ratio,diffuser_loss_percent,"
                    "impeller_skin_friction_loss_j_kg,"
                    "impeller_blade_loading_loss_j_kg,"
@@ -1618,6 +1639,9 @@ int main(int argc, char** argv)
                         << ',' << point.rpm << ',' << point.mass_flow << ','
                         << point.measured_efficiency << ','
                         << result.total_to_total_efficiency << ',' << error_pp << ','
+                        << result.polytropic_efficiency << ','
+                        << result.polytropic_head_j_kg << ','
+                        << result.polytropic_endpoint_temperature_residual_k << ','
                         << result.stage_pr << ',' << result.diffuser_loss_percent << ','
                         << result.impeller_skin_friction_loss_j_kg << ','
                         << result.impeller_blade_loading_loss_j_kg << ','
@@ -1652,6 +1676,9 @@ int main(int argc, char** argv)
                     << ',' << result.inlet_reynolds << ',' << point.rpm << ','
                     << point.mass_flow << ',' << point.measured_efficiency << ','
                     << result.total_to_total_efficiency << ',' << error_pp << ','
+                    << result.polytropic_efficiency << ','
+                    << result.polytropic_head_j_kg << ','
+                    << result.polytropic_endpoint_temperature_residual_k << ','
                     << result.stage_pr << ',' << result.diffuser_loss_percent << ','
                     << result.impeller_skin_friction_loss_j_kg << ','
                     << result.impeller_blade_loading_loss_j_kg << ','
@@ -1688,6 +1715,9 @@ int main(int argc, char** argv)
                     << ',' << point.rpm << ',' << point.mass_flow << ','
                     << point.measured_efficiency << ','
                     << result.total_to_total_efficiency << ',' << error_pp << ','
+                    << result.polytropic_efficiency << ','
+                    << result.polytropic_head_j_kg << ','
+                    << result.polytropic_endpoint_temperature_residual_k << ','
                     << result.stage_pr << ',' << result.diffuser_loss_percent << ','
                     << result.impeller_skin_friction_loss_j_kg << ','
                     << result.impeller_blade_loading_loss_j_kg << ','

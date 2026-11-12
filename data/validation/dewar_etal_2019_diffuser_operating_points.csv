@@ -1,0 +1,17 @@
+# Source: Dewar et al. (2019), Table 4, DOI 10.1155/2019/7415263.
+# Transcribed table values, not digitized values.
+# Experimental rig: air, closed loop. Inlet CFD boundary: p0=96 kPa, T0=300 K.
+# Table PR is total-to-total; tap pressure data are section/span-position static ratios.
+# Design-point measurement (Table 2): eta_tt=0.798 +/- 0.0081 relative; PR_tt=2.36 +/- 0.0035 relative; mdot=1.79 +/- 0.0054 relative.
+# Geometry values in Table 1: impeller exit radius=0.271 m, diffuser outer radius=0.542 m,
+# blade backsweep=40 deg, impeller exit height=0.0122 m, diffuser height=0.0103 m, blades=9+9.
+point,speed_hz,mass_flow_kg_s,measured_total_to_total_pressure_ratio
+1,461,1.98,2.28
+2,461,1.80,2.36
+3,461,1.44,2.48
+4,364,1.46,1.81
+5,364,1.33,1.72
+6,364,1.06,1.76
+7,323,1.24,1.54
+8,323,1.13,1.57
+9,323,0.90,1.61

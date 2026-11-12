@@ -33,8 +33,8 @@ it is a software parity experiment against a frozen CPU reference.
 | Mixture EOS and real-gas properties | Lin et al. (2026), Srinivasan et al. (2024), plus GERG-2008 reference | Yes; Lin's exact paired EOS values are not public, but our own GERG comparison uses the same published mixture and state grid | Implemented PR screen fails reported Z, density, and cp/cv maxima; enthalpy datum is not comparable |
 | Thermodynamic work and efficiency definitions | Srinivasan et al. (2024), Lin et al. (2026), Chen et al. (2025) | Yes for published PTC outputs and selected field points; conventions must be matched | Definitions are documented; a matching PTC-10 implementation/reference comparison is still needed |
 | Impeller velocity triangles and empirical loss correlations | Kovář et al. (2021), Yang et al. (2023), Eckardt and related published loss sources | Partial: correlations and map plots/tables exist, but some results are digitized or coefficient-optimized | Useful implementation cross-checks; fitted coefficients are not independent prediction evidence |
-| Diffuser pressure recovery and off-design behavior | Avramenko et al. (2015), Jaatinen-Värri et al. (2014) | Yes: Avramenko publishes eight station-matched static-pressure regimes | Data transcribed; geometry and static/total definitions prevent a direct score with the current Eckardt-only executable |
-| Air compressor stage/map performance | Eckardt A, Choi–Kang, and Kovář et al. (2021/2023) | Yes, with some approximate digitization and different impeller geometries | Screened; Eckardt A efficiency-slope and magnitude residuals remain material |
+| Diffuser pressure recovery and off-design behavior | Avramenko et al. (2015), Jaatinen-Värri et al. (2014), Dewar et al. (2019), Rossbach et al. (2015) | Yes: Avramenko publishes eight station regimes; Dewar has nine map points and tap locations; Rossbach Fig. 9 has measured component recovery curves | Avramenko and Rossbach inputs are transcribed at different precision levels; no direct score with the current Eckardt-only executable |
+| Air compressor stage/map performance | Eckardt A, Choi–Kang, Kovář et al. (2021/2023), Dewar et al. (2019), Rossbach et al. (2015), Methel (2016) | Yes, with tabulated and figure-digitized sources on different machines | Screened only on Eckardt A; its efficiency-slope and magnitude residuals remain material. Other source geometries need case adapters |
 | Measurement uncertainty and test interpretation | Srinivasan et al. (2024), Chen et al. (2025), Avramenko et al. (2015) | Partial: selected measurement practices and points are published, but uncertainty is not consistently sufficient for our acceptance limits | Our own acceptance criteria and uncertainty propagation still need completion |
 | Natural-gas compressor performance with matched stage geometry | Chen et al. (2025), Lin et al. (2026) discuss real machines, but do not provide the matched public geometry and pointwise stage data required here | No usable blind stage-map dataset | **Uncovered; blocks natural-gas aerodynamic validation** |
 
@@ -71,3 +71,18 @@ regimes are in
 The remaining physics-validation gates are recorded in
 [`PHYSICS_VALIDATION_EXIT_GATE.md`](PHYSICS_VALIDATION_EXIT_GATE.md). Paper
 coverage does not change those gate statuses.
+
+## Additional non-NASA datasets found (2026-11-11)
+
+Dewar et al. (2019) supplies nine operating points and 12 diffuser tap
+positions; the tables are transcribed in `data/validation/dewar_etal_2019_*`,
+but Figure 8 still needs calibrated digitization. Rossbach et al. (2015)
+supplies full-stage and component-level air-rig measurements in figures. Its
+Figure 9 experimental pressure-recovery curves are approximately digitized in
+`data/validation/rossbach_etal_2015_diffusion_pressure_recovery_digitized.csv`;
+the trend screen passes, but this is not a TurboCompGPU run. Methel (2016)
+supports qualitative diffuser-design and clearance conclusions; the thesis
+download was blocked in this environment, so it is not yet transcribed.
+DATED supplies outputs from a 1D meanline model and can support cross-model
+checks only after a matching geometry and license are established. See
+`docs/EXTERNAL_DATASETS_NON_NASA.md` for source and reuse details.

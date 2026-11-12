@@ -17,6 +17,33 @@ fresh flow, recycle and compressor-node mass residuals, suction mixer enthalpy
 residual, and any cooler duty. Valve, return-line, and cooler models must be
 calibrated for the machine and station.
 
+## Runnable programmatic example
+
+`examples/two_pipe_compressor.cpp` runs a configurable transient, carrying the
+upstream and downstream pipe states forward at each implicit time step. It
+writes `pipeline_fields.csv` (pressure, flow, and temperature at every pipe
+node and time) and `compressor_history.csv` (station pressures, flows, power,
+mass residual, and speed). The example reads `key = value` settings from
+`examples/two_pipe_compressor.conf`; it accepts a different file and output
+directory through command-line options. `scripts/plot_two_pipe_transient.py`
+turns the field CSV into pressure, flow, and temperature time-distance plots.
+
+```sh
+./build-coupled/turbocompgpu_two_pipe_compressor \
+  --config examples/two_pipe_compressor.conf \
+  --output-dir benchmarks/two_pipe_demo
+python3 scripts/plot_two_pipe_transient.py \
+  benchmarks/two_pipe_demo/pipeline_fields.csv \
+  --output-dir benchmarks/two_pipe_demo/plots
+```
+
+The bundled case is synthetic and uses an ideal-gas compressor model. Pipe
+segments use fixed temperature, gas constant, and compressibility factor; the
+temperature plot therefore shows each segment's configured isothermal value,
+not a solved thermal transient. The C++ coupling API receives
+`thermomodel::Model` and `DifferentiableModel` references, so a calling program
+can supply a compatible real-gas model directly.
+
 ## Integration test
 
 The `two_pipe_compressor_coupling` test uses a real `CompressorComponent` and
@@ -50,7 +77,14 @@ cmake -S . -B build-coupled \
   -DCMAKE_PREFIX_PATH="$HOME/Sync/ThermoGPU/install-release-cpu" \
   -DTURBOCOMPGPU_PIPE_SIM_SOURCE_DIR="$HOME/Sync/transient-pipe-flow"
 cmake --build build-coupled \
-  --target turbocompgpu_two_pipe_compressor_coupling_test --parallel 8
+  --target turbocompgpu_two_pipe_compressor turbocompgpu_two_pipe_compressor_coupling_test \
+  --parallel 8
+./build-coupled/turbocompgpu_two_pipe_compressor \
+  --config examples/two_pipe_compressor.conf \
+  --output-dir benchmarks/two_pipe_demo
+python3 scripts/plot_two_pipe_transient.py \
+  benchmarks/two_pipe_demo/pipeline_fields.csv \
+  --output-dir benchmarks/two_pipe_demo/plots
 ctest --test-dir build-coupled --output-on-failure \
   -R '^two_pipe_compressor_coupling$'
 ```

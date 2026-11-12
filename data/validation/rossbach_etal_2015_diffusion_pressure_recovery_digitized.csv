@@ -1,0 +1,29 @@
+# Source: Rossbach et al. (2015), Fig. 9, ETC2015-084, values visually digitized from published plot.
+# All Cp values are dimensionless static-pressure recovery coefficients; flow is dimensionless phi_Stage.
+# These are approximate plot readings, not source tabulations. Estimated y digitization uncertainty: about +/-0.02 Cp.
+# Experimental markers only. Do not interpret as precise pointwise validation scores without re-digitization.
+phi_stage,component,measured_cp,digitization_uncertainty_estimate,source_figure
+0.120,plane_2_to_3,0.100,0.020,9
+0.138,plane_2_to_3,0.085,0.020,9
+0.152,plane_2_to_3,0.100,0.020,9
+0.163,plane_2_to_3,0.080,0.020,9
+0.170,plane_2_to_3,0.030,0.020,9
+0.177,plane_2_to_3,0.000,0.020,9
+0.120,plane_2_to_4,0.610,0.020,9
+0.138,plane_2_to_4,0.605,0.020,9
+0.152,plane_2_to_4,0.595,0.020,9
+0.163,plane_2_to_4,0.590,0.020,9
+0.170,plane_2_to_4,0.590,0.020,9
+0.177,plane_2_to_4,0.585,0.020,9
+0.120,plane_2_to_out,0.700,0.020,9
+0.138,plane_2_to_out,0.630,0.020,9
+0.152,plane_2_to_out,0.570,0.020,9
+0.163,plane_2_to_out,0.460,0.020,9
+0.170,plane_2_to_out,0.380,0.020,9
+0.177,plane_2_to_out,0.150,0.020,9
+0.120,plane_4_to_out,0.090,0.020,9
+0.138,plane_4_to_out,0.040,0.020,9
+0.152,plane_4_to_out,-0.030,0.020,9
+0.163,plane_4_to_out,-0.150,0.020,9
+0.170,plane_4_to_out,-0.240,0.020,9
+0.177,plane_4_to_out,-0.430,0.020,9
